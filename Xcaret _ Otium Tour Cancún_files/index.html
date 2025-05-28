@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<!-- saved from url=(0199)https://widget.writesonic.com/CDN/index.html?service-base-url=https%3A%2F%2Fapi-azure.botsonic.ai&token=2184d5be-9cee-4e60-87a6-fdd309513ff6&base-origin=http%3A%2F%2Flocal-host&instance-name=Botsonic -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="icon" href="https://widget.writesonic.com/CDN/favicon.ico"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><meta name="description" content="Botsonic | Writesonic"><link rel="apple-touch-icon" href="https://widget.writesonic.com/CDN/logo192.png"><link rel="manifest" href="https://widget.writesonic.com/CDN/manifest.json"><link rel="stylesheet" href="./tabler-icons.min.css"><title>Botsonic | Writesonic</title><!--<base href="/CDN">--><base href="."><script defer="defer" src="./main.5e823723.js.download"></script><link href="./main.94ff4caa.css" rel="stylesheet"><style type="text/css">/*
+  code is extracted from Calendly's embed stylesheet: https://assets.calendly.com/assets/external/widget.css
+*/
+
+.calendly-inline-widget,
+.calendly-inline-widget *,
+.calendly-badge-widget,
+.calendly-badge-widget *,
+.calendly-overlay,
+.calendly-overlay * {
+    font-size:16px;
+    line-height:1.2em
+}
+
+.calendly-inline-widget iframe,
+.calendly-badge-widget iframe,
+.calendly-overlay iframe {
+    display:inline;
+    width:100%;
+    height:100%
+}
+
+.calendly-popup-content {
+    position:relative
+}
+
+.calendly-popup-content.calendly-mobile {
+    -webkit-overflow-scrolling:touch;
+    overflow-y:auto
+}
+
+.calendly-overlay {
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    overflow:hidden;
+    z-index:9999;
+    background-color:#a5a5a5;
+    background-color:rgba(31,31,31,0.4)
+}
+
+.calendly-overlay .calendly-close-overlay {
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0
+}
+
+.calendly-overlay .calendly-popup {
+    box-sizing:border-box;
+    position:absolute;
+    top:50%;
+    left:50%;
+    -webkit-transform:translateY(-50%) translateX(-50%);
+    transform:translateY(-50%) translateX(-50%);
+    width:80%;
+    min-width:900px;
+    max-width:1000px;
+    height:90%;
+    max-height:680px
+}
+
+@media (max-width: 975px) {
+    .calendly-overlay .calendly-popup {
+        position:fixed;
+        top:50px;
+        left:0;
+        right:0;
+        bottom:0;
+        -webkit-transform:none;
+        transform:none;
+        width:100%;
+        height:auto;
+        min-width:0;
+        max-height:none
+    }
+}
+
+.calendly-overlay .calendly-popup .calendly-popup-content {
+    height:100%;
+}
+
+.calendly-overlay .calendly-popup-close {
+    position:absolute;
+    top:25px;
+    right:25px;
+    color:#fff;
+    width:19px;
+    height:19px;
+    cursor:pointer;
+    background:url(https://assets.calendly.com/assets/external/close-icon.svg) no-repeat;
+    background-size:contain
+}
+
+@media (max-width: 975px) {
+    .calendly-overlay .calendly-popup-close {
+        top:15px;
+        right:15px
+    }
+}
+
+.calendly-badge-widget {
+    position:fixed;
+    right:20px;
+    bottom:15px;
+    z-index:9998
+}
+
+.calendly-badge-widget .calendly-badge-content {
+    display:table-cell;
+    width:auto;
+    height:45px;
+    padding:0 30px;
+    border-radius:25px;
+    box-shadow:rgba(0,0,0,0.25) 0 2px 5px;
+    font-family:sans-serif;
+    text-align:center;
+    vertical-align:middle;
+    font-weight:bold;
+    font-size:14px;
+    color:#fff;
+    cursor:pointer
+}
+
+.calendly-badge-widget .calendly-badge-content.calendly-white {
+    color:#666a73
+}
+
+.calendly-badge-widget .calendly-badge-content span {
+    display:block;
+    font-size:12px
+}
+
+.calendly-spinner {
+    position:absolute;
+    top:50%;
+    left:0;
+    right:0;
+    -webkit-transform:translateY(-50%);
+    transform:translateY(-50%);
+    text-align:center;
+    z-index:-1
+}
+
+.calendly-spinner>div {
+    display:inline-block;
+    width:18px;
+    height:18px;
+    background-color:#e1e1e1;
+    border-radius:50%;
+    vertical-align:middle;
+    -webkit-animation:calendly-bouncedelay 1.4s infinite ease-in-out;
+    animation:calendly-bouncedelay 1.4s infinite ease-in-out;
+    -webkit-animation-fill-mode:both;
+    animation-fill-mode:both
+}
+
+.calendly-spinner .calendly-bounce1 {
+    -webkit-animation-delay:-0.32s;
+    animation-delay:-0.32s
+}
+
+.calendly-spinner .calendly-bounce2 {
+    -webkit-animation-delay:-0.16s;
+    animation-delay:-0.16s
+}
+
+@-webkit-keyframes calendly-bouncedelay {
+    0%,80%,100% {
+        -webkit-transform:scale(0);
+        transform:scale(0)
+    } 
+    
+    40%{
+        -webkit-transform:scale(1);
+        transform:scale(1)
+    }
+}
+
+@keyframes calendly-bouncedelay{ 
+    0%,80%,100% {
+        -webkit-transform:scale(0);
+        transform:scale(0)
+    }
+    
+    40% {
+        -webkit-transform:scale(1);
+        transform:scale(1)
+    }
+}</style></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"><div class=""><div class="bot-container" style="--chatBotColor: #222222; --invertedColor: #FFFFFF; --invertedColor10: #FFFFFF1A; --starterHoverColor: rgba(34, 34, 34, 0.1); --borderColor: #222222; --whiteOrChatBotColor: #222222; --chatBotOrDarkColor: #222222; --translateHidden: 50%;"><div class="widget-button-container justify-end"><div class="widget-button bg-[var(--chatBotColor)] text-[var(--invertedColor)] active:scale-75"><div class="relative"><div class="flex items-center"><img src="./073cd31a-5804-4e8d-acc6-8784ead2693f.png" class="h-9 w-9"><div class="counter-badge">1</div></div></div></div></div></div></div></div></body></html>

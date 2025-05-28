@@ -1,0 +1,2312 @@
+var solor_sin_traslado = 0;
+jQuery(document).ready(function(){
+	jQuery(".clDescripcionCorta").click(function(){
+		jQuery("#desc_corta").css({"display": "none"});
+		jQuery([document.documentElement, document.body]).animate({
+			scrollTop: $(".clDescripciones").offset().top
+		}, 1000);
+	});
+	jQuery(".clDescripcion").click(function(){
+		jQuery("#desc_corta").css({"display": "block"});
+		jQuery([document.documentElement, document.body]).animate({
+			scrollTop: $(".clDescripciones").offset().top
+		}, 1000);
+	});
+	if(!parseInt(jQuery("#op_sin_hoteles").val())){
+		sintraslado();
+	}
+
+	if(parseInt(jQuery('#buscar_tour_hotel').val())> 0 ) {	
+		cargarMod();
+	}
+
+});
+	
+function sintraslado(){
+	var base = jQuery("#id_base_sin_transporte").val();
+	jQuery("#adultos").val(1);
+	jQuery("#adultos_tours").val(1);
+	jQuery(".qtyTotal").text(1);
+	jQuery("#ninos_tours").val(0);
+	jQuery("#ninos").val(0);
+	jQuery("#infantes_tours").val(0);
+	jQuery("#infantes").val(0);
+	if(jQuery('#chk_sin_traslado').prop('checked') ) {		
+		jQuery('#buscar_tour_hotel option[value="0"]').remove();
+		jQuery("#buscar_tour_hotel option[value='"+base+"'").attr("selected",true);
+		jQuery("#buscar_tour_hotel").prop("disabled", true);
+		jQuery(".buscar_tour_hotel").select2({tags: true,maximumSelectionLength:1});
+		jQuery("#info_sin_traslado").removeClass("ocultar");
+		jQuery("#buscar_tour_hotel").parent().parent().addClass("ocultar");
+		jQuery("#info_sin_traslado").removeClass("ocultar");
+		cargarMod();
+	}else{
+		jQuery("#info_sin_traslado").addClass("ocultar");
+		jQuery("#precio").text("0.00 USD");
+		jQuery("#buscar_tour_hotel option[value='"+base+"'").removeAttr("selected",true);
+		jQuery('#buscar_tour_hotel').prepend("<option value='0'>-- "+app.lang.select_hotel+" --</option>");
+		jQuery("#buscar_tour_hotel option[value='0'").attr("selected",true);
+		jQuery("#buscar_tour_hotel").removeAttr("disabled");
+		jQuery(".buscar_tour_hotel").select2({tags: true,maximumSelectionLength:1});
+		jQuery("#fecha_exc").val("");
+		jQuery("#fecha_exc").prop("disabled", true);
+		jQuery("#fecha_exc").attr('style', 'background-color: #eee !important');
+		jQuery(".fecha_exc_ico").css('color','#a499a4ad');
+		jQuery("#modalidad_tour").prop("disabled", true);
+		jQuery("#modalidad_tour").empty();
+		jQuery("#buscar_tour_hotel").parent().parent().removeClass("ocultar");
+		jQuery("#turno_tour").prop("disabled", true);
+		jQuery("#turno_tour").empty();
+	}
+}
+
+function validar_hotel(){
+    var id_base      =  jQuery("#buscar_tour_hotel").val();    
+    if(parseInt(id_base) == 0) {		
+		alert(app.lang.alert_dt_tour_select_hotel);
+		jQuery("#buscar_tour_hotel").parent().css('border', '2px solid red');
+		return false;
+	}else{
+		jQuery("#buscar_tour_hotel").parent().css('border','');
+	}
+}
+
+function validar_fecha(){ 
+    var fecha   =  jQuery("#fecha_exc").val();  
+    if(fecha == "") {		
+		alert(app.lang.alert_dt_tour_select_fecha);
+		jQuery("#fecha_exc").css('border', '2px solid red');
+		return false;
+	}else{
+		jQuery("#fecha_exc").css('border','');
+	}
+}
+
+function validar_modalidad(){   
+    var mod      =  jQuery("#modalidad_tour").val();    
+    if(parseInt(mod) == 0 || mod =="") {		
+		alert(app.lang.alert_dt_tour_select_mod);
+		jQuery("#modalidad_tour").parent().css('border', '2px solid red');
+		return false;
+	}else{
+		jQuery("#modalidad_tour").parent().css('border','');
+	}
+}
+
+
+function cargarMod(){  
+    var fecha        =  jQuery("#fecha_exc").val();  
+    var id_excursion =  jQuery("#idExc").val();
+    var id_base      =  jQuery("#buscar_tour_hotel").val();
+    var id_lang      =  jQuery("#langId").val();
+    var statusApi  	 =  parseInt($("#statusApi").val());
+	if(parseInt(id_base) == 0) {		
+		alert(app.lang.alert_dt_tour_select_hotel);
+		jQuery("#buscar_tour_hotel").parent().css('border', '2px solid red');
+		return false;
+	}else{
+        jQuery("#fecha_exc").css("background-color",'');
+		
+		/*if(jQuery('#chk_sin_traslado').prop('checked') ) 
+        	jQuery("#fecha_exc").removeAttr("disabled").focus().attr('placeholder', app.lang.banner_buscador_fecha);
+		*/
+		
+		jQuery("#fecha_exc").removeAttr("disabled").attr('placeholder', app.lang.banner_buscador_fecha);
+
+		jQuery("#buscar_tour_hotel").parent().css('border','');
+		jQuery(".fecha_exc_ico").css('color','');
+	
+    }
+    
+    if(fecha != "") {
+        jQuery("#modalidad_tour").removeAttr("disabled").focus().attr('placeholder', app.lang.select_modalidad);
+		jQuery("#fecha_exc").css('border','');
+        jQuery("#modalidad_tour").parent().css('border','');
+		jQuery(".modalidad_tour_ico").css('color','');
+
+	}
+
+    jQuery("#buscar_tour_hotel option[value='0']").remove();
+
+	
+
+	qty_total = 1;
+	jQuery("#adultos").val(1);
+	jQuery("#adultos_tours").val(1);
+	jQuery(".qtyTotal").text(1);
+	jQuery("#ninos_tours").val(0);
+	jQuery("#ninos").val(0);
+	jQuery("#infantes_tours").val(0);
+	jQuery("#infantes").val(0);
+	//console.log('opcion=modalModalidades&id_lang='+id_lang+'&fecha='+fecha+'&id_excursion='+id_excursion+'&id_base='+id_base);
+    if(fecha!=""){
+        jQuery.ajax({
+            beforeSend: function(){                    
+            },
+            type: 'POST',
+            url: 'ajax/ajax.php',
+            data: 'opcion=modalModalidades&id_lang='+id_lang+'&fecha='+fecha+'&id_excursion='+id_excursion+'&id_base='+id_base,
+            dataType: 'xml',
+            success: function(xml){
+              
+              jQuery("#modalidad_tour").empty();          
+              jQuery("#modalidad_tour").append(jQuery("<option>",{ value: "0", text: app.lang.select_modalidad}));
+              jQuery("#turno_tour").empty(); 
+              jQuery("#turno_tour").append(jQuery("<option>",{ value: "",  text: ''}));
+              var i=0;
+              jQuery("items_modalidad",xml).each(
+                function(id){
+                  i=i+1;
+                  var num1= jQuery("items_modalidad",xml).get(id);           
+                    jQuery("#modalidad_tour").append(jQuery("<option>",{ value: jQuery("id_modalidad",num1).text(), 'pcb':jQuery("id_pcb",num1).text(), 'segmento':jQuery("id_segmento",num1).text(), 'privada':jQuery("privada",num1).text(), 'ocupacion':jQuery("ocupacion",num1).text(), 'id_product_api':jQuery("id_product_api",num1).text(), text: jQuery("nombre_modalidad",num1).text()}));
+                }
+              ); 
+			  if(i == 0){
+				jQuery("#modalidad_tour").append(jQuery("<option>",{ value: '0', text: app.lang.validacion_option_modalidad}));
+				jQuery("#exampleModalCenter").modal();  
+			  }
+			  if (statusApi === 1) {
+			  	// alert("entre aquiii");
+			  } else {
+			  	cargarPrecio();
+			  }
+            }
+        }).fail( function( jqXHR, textStatus, errorThrown ) {
+            alert( jqXHR );
+            alert( textStatus );
+            alert( errorThrown );
+        });
+    }else{
+		jQuery.ajax({
+            beforeSend: function(){                    
+            },
+            type: 'POST',
+            url: 'ajax/ajax.php',
+            data: 'opcion=bloquearDias&id_lang='+id_lang+'&fecha='+fecha+'&id_excursion='+id_excursion+'&id_base='+id_base,
+            dataType: 'xml',
+            success: function(xml){
+				var diasBloqueados = jQuery("arrDiasBloqeuados",xml).text();
+				//console.log("Dias a bloqeuar = " + jQuery("arrDiasBloqeuados",xml).text());
+				//console.log("Dias a op = " + jQuery("diasop",xml).text());
+				var dias    = diasBloqueados.split(','); 
+				var minDias = jQuery("#mindias").val();
+				jQuery(".fecha_exc").datepicker("remove");
+				jQuery(".fecha_exc").datepicker({ 
+					format: 'dd-mm-yyyy',
+					autoclose: true,  
+					startDate: vStarDate,
+					daysOfWeekDisabled: dias
+				});  
+				jQuery("#fecha_exc").datepicker("update");
+				//jQuery(".fecha_exc").datepicker("refresh"); 
+				//alert(dias);                       
+            }
+
+			
+        }).fail( function( jqXHR, textStatus, errorThrown ) {
+            alert( jqXHR );
+            alert( textStatus );
+            alert( errorThrown );
+        });
+	} 
+   hotelAPI();
+ }
+
+ function addCartDataLayer_begin_checkout(arrList){
+    
+    window.dataLayer = window.dataLayer || [];
+	window.dataLayer.push({ ecommerce: null })
+    window.dataLayer.push({										
+    	event: "begin_checkout",
+        ecommerce: {			
+            items:arrList
+        }
+    });
+   console.log(arrList);
+}
+function guardarSesiones(){
+	var hotel      = jQuery("#buscar_tour_hotel").val();
+	var nombre     = jQuery("#nombre").val().trim(); 
+	var apellido   = jQuery("#apellido").val().trim(); 
+	var email      = jQuery("#correo_electronico").val().trim(); 
+	var idioma     = jQuery("#idioma").val().trim(); 
+	var pasaporte  = jQuery("#no_pasaporte").val().trim(); 
+	var telefono   = jQuery("#telefono").val().trim(); 	
+	var code       = jQuery("#code").val().trim().replace("+", "__"); 	
+	var idExc      = jQuery("#idExc").val().trim();
+	var precio_reserva                = jQuery("#precio_reserva").val();
+	var precio_reserva_descuento      = jQuery("#precio_reserva_descuento").val();
+
+	//console.log('opcion=guardarSesionesForm&precio_reserva='+precio_reserva+'&precio_reserva_descuento='+precio_reserva_descuento+'&id='+idExc+'&nombre='+nombre+'&code='+code+'&apellido='+apellido+'&email='+email+'&idioma='+idioma+'&hotel='+hotel+'&pasaporte='+pasaporte+'&telefono='+telefono);
+	jQuery.ajax({
+		beforeSend: function(){   
+			HoldOn.open('sk-circle');   
+		},
+		type: 'POST',
+		url: 'ajax/ajax.php',
+		data: 'opcion=guardarSesionesForm&precio_reserva='+precio_reserva+'&precio_reserva_descuento='+precio_reserva_descuento+'&id='+idExc+'&nombre='+nombre+'&code='+code+'&apellido='+apellido+'&email='+email+'&idioma='+idioma+'&hotel='+hotel+'&pasaporte='+pasaporte+'&telefono='+telefono,
+		dataType: 'xml',
+		success: function(xml){
+			let paypal    = parseInt(jQuery("paypal",xml).text());
+			let payme     = parseInt(jQuery("payme",xml).text());
+			let stripe    = parseInt(jQuery("stripe",xml).text());
+			let nro_orden = jQuery("orden_detalle",xml).text();		
+			let moneda    = jQuery("moneda_iso",xml).text();		
+			let total_reserva    = jQuery("total_reserva_format_web",xml).text();		
+			let total_reserva_sin_cupon    = jQuery("total_reserva_sin_cupon_format_web",xml).text();	
+			
+			//console.log("id_orden_detalle_temp = "+jQuery("id_orden_detalle_temp",xml).text());
+
+			var precio_reserva                = parseFloat(jQuery("#precio_reserva").val());
+            var precio_reserva_descuento      = parseFloat(jQuery("#precio_reserva_descuento").val());
+            
+            if(precio_reserva_descuento > 0)
+                var total_orden  = jQuery("#precio_reserva_descuento").val();
+            else
+                var total_orden  = jQuery("#precio_reserva").val();
+			
+			if(nro_orden != ""){
+				setTimeout(function(){					
+					agregarItemPagoDirecto();
+				}, 4000);
+			}
+			
+
+			jQuery("#precio").val(total_orden);
+			jQuery("#precio_stripe").val(jQuery("total_reserva",xml).text());
+			jQuery("#total_orden_usd").val(jQuery("total_reserva_usd",xml).text());
+			jQuery("#total_orden_usd_stripe").val(jQuery("total_reserva_usd",xml).text());
+            jQuery("#precio_sin_decimales").val(total_orden.replace(/\./g,''));
+            jQuery("#moneda_iso").val(moneda.toLowerCase());
+
+
+			jQuery("#acquirerId").val(jQuery("payme_acquirerId",xml).text());
+			jQuery("#idCommerce").val(jQuery("payme_idCommerce",xml).text());
+			jQuery("#purchaseOperationNumber").val(jQuery("payme_idOrden",xml).text());
+			jQuery("#purchaseAmount").val(jQuery("purchaseAmount",xml).text());
+			jQuery("#purchaseCurrencyCode").val(jQuery("CurrencyCode",xml).text());
+			jQuery("#language").val(jQuery("idiomaModal",xml).text());
+			jQuery("#shippingFirstName").val(jQuery("#nombre").val());
+			jQuery("#shippingLastName").val(jQuery("#apellido").val());
+			jQuery("#shippingEmail").val(jQuery("#correo_electronico").val());			
+			jQuery("#descriptionProducts").val(jQuery("payme_product",xml).text());
+			jQuery("#reserved1").val(jQuery("idiomaModal",xml).text());
+			jQuery("#reserved2").val(jQuery("idiomaStripe",xml).text());
+			jQuery("#reserved3").val(jQuery("orden_detalle",xml).text());
+			jQuery("#reserved4").val(jQuery("id_order_dt",xml).text());			
+			jQuery("#reserved7").val(jQuery("total_reserva_usd",xml).text());
+			jQuery("#reserved8").val(jQuery("#nombre").val());
+			jQuery("#reserved9").val(jQuery("#apellido").val());
+			jQuery("#reserved10").val(jQuery("#correo_electronico").val());		
+			jQuery("#purchaseVerification").val(jQuery("payme_purchaseVerification",xml).text());
+			if(precio_reserva_descuento > 0)	
+				jQuery("#reserved11").val(jQuery("#cupon").val());
+			
+			jQuery("#reserved12").val(jQuery("#modalidad_tour").val());
+			jQuery("#reserved13").val(jQuery("#buscar_tour_hotel").val());
+			jQuery("#reserved14").val(jQuery("#turno_tour").val());
+			jQuery("#reserved15").val(jQuery("#fecha_exc").val());
+			jQuery("#reserved16").val(jQuery("#fecha_exc").val());
+			var fecha_excursion  = jQuery("#fecha_exc").val();
+			jQuery("#reserved17").val(formatoSql(fecha_excursion));
+			jQuery("#reserved18").val(jQuery("#modal_privada").val());
+			jQuery("#reserved19").val(jQuery("#modal_renglon").val());
+			jQuery("#reserved20").val(jQuery("#totales_renglon").val());
+				
+			let cad_valores = "";
+			var nropaxs      = 0;
+			var renglones = jQuery("#modal_renglon").val().split(',');
+			for($i=0; $i<renglones.length; $i++){
+				cad_valores += jQuery("#"+renglones[$i]).val()+",";
+				if(parseInt(jQuery("#contable"+renglones[$i]).val()) == 1)
+					nropaxs+=parseInt(jQuery("#"+renglones[$i]).val());
+			}
+
+			jQuery("#reserved21").val(cad_valores);
+			jQuery("#reserved24").val(jQuery("#precio_reserva").val());
+			jQuery("#reserved25").val(jQuery("#precio_reserva_descuento").val());
+			jQuery("#reserved26").val(jQuery("#modalidad_tour").find(':selected').attr('ocupacion'));
+			jQuery("#reserved27").val(jQuery("#modalidad_tour").find(':selected').attr('segmento'));
+			jQuery("#reserved28").val(jQuery("#idExc").val());
+			jQuery("#reserved29").val(jQuery("#modalidad_tour").find(':selected').attr('pcb'));	
+			jQuery("#reserved30").val(jQuery("#no_pasaporte").val());
+			jQuery("#reserved31").val(jQuery("#idioma").val());
+			jQuery("#reserved32").val(jQuery("#code").val());
+			jQuery("#reserved33").val(jQuery("#telefono").val());
+			jQuery("#reserved34").val(jQuery("aplica_excursiones",xml).text());
+			jQuery("#reserved36").val(jQuery("#modalidad_tour").find(':selected').attr('ocupacion'));
+
+			
+			jQuery("#nro_orden").text(nro_orden);
+			jQuery("#numero_orden").val(nro_orden);
+
+			
+			//console.log("paypal = "+paypal);
+			if(paypal > 0){
+				jQuery("#paypal").addClass("ocultar");
+				jQuery(".paypal").addClass("ocultar");
+			}else{
+                jQuery("#paypal").removeClass("ocultar");
+				jQuery(".paypal").removeClass("ocultar");
+			}	
+		
+			//console.log("payme = "+payme);
+
+			if(payme > 0){
+				
+
+				jQuery("#botonPagoPayme").addClass("ocultar");
+			}else{
+                jQuery("#botonPagoPayme").removeClass("ocultar");
+			}
+			
+			//console.log("Strpe = "+stripe);
+			if(stripe > 0)				
+				jQuery("#botonPagoStripe").addClass("ocultar");
+			else{		
+				
+				//if(moneda == "MXN"){					
+					jQuery("#precio_descuentoCompraRapida").text(total_reserva+" "+moneda);
+					console.log(parseFloat(total_reserva_sin_cupon.replace(',','')), parseFloat(total_reserva.replace(',','')));
+					if(parseFloat(total_reserva_sin_cupon.replace(',','')) > parseFloat(total_reserva.replace(',',''))){
+						jQuery("#precioCompraRapida").text(total_reserva_sin_cupon+" "+moneda);						
+					}
+				//}
+				
+                jQuery("#botonPagoStripe").removeClass("ocultar");
+			}
+
+			
+
+			var purchase = {
+				amount: jQuery("#precio_stripe").val(),
+				customer: jQuery("#correo_electronico").val(),
+				description: "OTIUM RESERVATION TOUR "+jQuery("#numero_orden").val(),
+				currency: jQuery("#moneda_iso").val()
+			};
+
+			generateBotonStripe(purchase);
+
+
+			//HoldOn.close();
+
+
+			
+
+			
+		}
+}).fail( function( jqXHR, textStatus, errorThrown ) {
+		alert( jqXHR );
+		alert( textStatus );
+		alert( errorThrown );
+}); 
+
+
+}
+ 
+function cargarTurnosModalidad(){	
+  var hotel        = jQuery("#buscar_tour_hotel").val();
+  var fecha        = jQuery("#fecha_exc").val();
+  var lang         = jQuery("#lang").val();
+  var modalidad    = jQuery("#modalidad_tour").val();
+  var ocupacion    = jQuery("#modalidad_tour").find(':selected').attr('ocupacion');
+  var segmento     = jQuery("#modalidad_tour").find(':selected').attr('segmento');
+  var privada      = jQuery("#modalidad_tour").find(':selected').attr('privada');
+  var id_prod_api  = $("#modalidad_tour").find(':selected').attr('id_product_api');
+  var statusApi    = parseInt($("#statusApi").val());
+  var id_excursion =  jQuery("#idExc").val();
+  var idProveedor  = $("#idproveedor").val();
+  var geografia    = $("#buscar_tour_hotel").find(':selected').attr('geografia');
+
+  // alert("este es el valor del id del producto: "+id_prod_api+" Y este del status del API: "+statusApi);
+   if(parseInt(privada)==1){
+	jQuery('#chk_privada').prop('checked', true);
+	jQuery('#chk_privada').attr('disabled', true);
+   }else{
+	jQuery('#chk_privada').prop('checked', false);
+	jQuery('#chk_privada').attr('disabled', false);
+
+   }
+   
+    if(parseInt(modalidad) == 0) {		
+        alert(app.lang.alert_dt_tour_select_mod);
+        jQuery("#modalidad_tour").parent().css('border', '2px solid red');
+        return false;
+    }else{       
+        jQuery("#turno_tour").removeAttr("disabled").focus().attr('placeholder', app.lang.select_turno);
+        jQuery("#modalidad_tour").parent().css('border','');
+        jQuery(".turno_tour_ico").css('color','');        
+    }
+
+	qty_total = 1;
+	jQuery("#adultos").val(0);
+	jQuery("#adultos_tours").val(0);
+	jQuery(".qtyTotal").text(1);
+	jQuery("#ninos_tours").val(1);
+	jQuery("#ninos").val(1);
+	jQuery("#infantes_tours").val(0);
+	jQuery("#infantes").val(0);
+	
+
+ 
+  	if(modalidad != "0"){
+  		jQuery("#modalidad_tour option[value='0']").remove();
+		jQuery.ajax({
+				beforeSend: function(){   
+				//jQuery("#agregaralcarro").attr('disabled',true);                 
+				},
+				type: 'POST',
+				url: 'ajax/ajax.php',
+				data: 'opcion=modalTurnoModalidad&lang='+lang+'&modalidad='+modalidad+'&fecha='+fecha+'&ocupacion='+ocupacion+'&hotel='+hotel+'&segmento='+segmento+'&idexc='+id_excursion,
+				dataType: 'xml',
+				success: function(xml){
+					jQuery("#factor_modular").val(ocupacion);
+					jQuery("#turno_tour").empty();					
+					var i=0;	
+
+					jQuery("itemHorario",xml).each(
+						function(id){
+						i=i+1;
+						var num1= jQuery("itemHorario",xml).get(id);           
+							jQuery("#turno_tour").append(jQuery("<option>",{ value: jQuery("id_horario",num1).text(), text: jQuery("titulo_horario",num1).text()}));
+						}
+					); 
+					
+					if(i == 0 && (id_prod_api === '' && statusApi !== 1)){       	
+						jQuery("#exampleModalCenter").modal();  					               
+						jQuery("#turno_tour").append(jQuery("<option>",{ value: "", text:  app.lang.select_turno}));
+                        jQuery("#select_paxs").addClass("ocultar");
+						
+						if(parseInt(jQuery("enc_fecha_desde",xml).text())== 1){
+							jQuery("#titulo_info_turno").text(jQuery("titulo_info_turno",xml).text());
+							jQuery("#desc_info_turno").text(jQuery("desc_info_turno",xml).text());
+							jQuery("#info_fecha_hasta").removeClass("ocultar");
+							jQuery("#turno_tours_div").addClass("ocultar");	
+						}
+					}else{
+                        jQuery("#select_paxs").removeClass("ocultar");     
+						jQuery("#info_fecha_hasta").addClass("ocultar");
+						jQuery("#turno_tours_div").removeClass("ocultar");
+                    }
+
+					//Paxs Control
+					var j=0;
+					var htmlPaxs = "";
+					var enc_val_ini = 0;
+					var primer_id = "";
+					jQuery("itemRenglon",xml).each(
+						function(id){
+							j=j+1;
+							var num1= jQuery("itemRenglon",xml).get(id);   
+							htmlPaxs+=' <div class="qtyButtons2">'+
+											'<label class="p-r" style="line-height: 15px;">'+
+												jQuery("nombre_renglon",num1).text()+										
+											'</label>'+
+											'<input type="hidden" id="contable'+jQuery("id_renglon",num1).text()+'" name="contable'+jQuery("id_renglon",num1).text()+'" value="'+jQuery("contable",num1).text()+'" readonly >'+
+											'<div class="qtyDec bx-s-g" onclick="quitarPaxsAddTours('+jQuery("id_renglon",num1).text()+')"></div>'+
+											'<input type="text" id="'+jQuery("id_renglon",num1).text()+'" name="'+jQuery("id_renglon",num1).text()+'" value="'+jQuery("val_inicial",num1).text()+'" readonly >'+
+											'<div class="qtyInc  bx-s-g" onclick="agregarPaxsAddTours('+jQuery("id_renglon",num1).text()+')"></div>'+
+										'</div>'; 
+							if(primer_id == "")
+								primer_id = jQuery("id_renglon",num1).text();
+
+							if(parseInt(jQuery("val_inicial",num1).text())> 0)
+								enc_val_ini = 1;
+						}
+					); 
+					
+					jQuery("#panel-paxs").html(htmlPaxs);
+
+					if(enc_val_ini == 0){						
+						jQuery("#"+primer_id).val(1);
+					}
+
+					
+					//Fin Paxs Control
+
+					//alert(jQuery("itemRenglon",xml).text());
+				
+					/*jQuery("#adultos").val(1);
+					jQuery("#adultos_tours").val(1);
+					jQuery(".qtyTotal").text(1);
+					jQuery("#ninos_tours").val(0);
+					jQuery("#ninos").val(0);
+					jQuery("#infantes_tours").val(0);
+					jQuery("#infantes").val(0);
+				
+					var arrRenglon = jQuery("cadenarenglon",xml).text().split(',');
+					if(arrRenglon.indexOf("2")>0){
+						jQuery("#paxs_nino").removeClass("ocultar");
+					}else{
+						jQuery("#paxs_nino").addClass("ocultar");
+					}
+
+					if(arrRenglon.indexOf("3")>0){
+						jQuery("#paxs_infante").removeClass("ocultar");
+					}else{
+						jQuery("#paxs_infante").addClass("ocultar");
+					}*/
+
+					jQuery("#modal_renglon").val(jQuery("cadenarenglon",xml).text());
+
+					if (id_prod_api !== '' && statusApi === 1) {
+						if (idProveedor === '163') {
+							var valores_renglon = '1,0,0';
+							$("#valores_renglon").val(valores_renglon);
+							availListXcaret(valores_renglon);
+						}
+						else if (idProveedor === '185'){
+							var valores_renglon = '1,0,0';
+							availListAdv(valores_renglon);
+						}
+						else {
+							
+						}
+						
+					}
+					else{
+						if(jQuery("#turno_tour").val()!="")
+							cargarPrecio();
+					}
+
+				}
+		}).fail( function( jqXHR, textStatus, errorThrown ) {
+				alert( jqXHR );
+				alert( textStatus );
+				alert( errorThrown );
+		}); 
+	}
+}
+var qty_total = 1;
+
+function agregarPaxsAddTours(renglon){
+  var idProveedor  = $("#idproveedor").val();
+  var id_prod_api  = $("#modalidad_tour").find(':selected').attr('id_product_api');
+  var statusApi    = parseInt($("#statusApi").val());
+  var paxs      = parseInt(jQuery("#"+renglon).val());   
+  var totalPaxs = paxs+1;   
+  qty_total = qty_total + 1;
+  //console.log("qty_total  =  "+qty_total);
+  //jQuery(".paxs_renglon_"+renglon).text(totalPaxs);
+  jQuery("#"+renglon).val(totalPaxs);
+  jQuery(".qtyTotal").text(qty_total);
+
+	if (id_prod_api !== '' && statusApi === 1) {
+		var renglones = jQuery("#modal_renglon").val().split(',');
+        var cadvalores = "";
+		for($i=0; $i<renglones.length; $i++){
+			cadvalores+=jQuery("#"+renglones[$i]).val()+",";
+		  }
+		  $("#valores_renglon").val(cadvalores);
+		  // alert(cadvalores);
+		if (idProveedor === '163') {
+			var valores_renglon = $("#valores_renglon").val();
+			availListXcaret(valores_renglon);
+		}
+		else if (idProveedor === '185'){
+			var turnoAPI = parseInt($("#turno_tour").val())
+			if (turnoAPI != 0) {
+				var cantidadMax  = parseInt($("#turno_tour").find(':selected').attr('canttickt'));
+			} else {
+				var cantidadMax  = 0;
+			}
+			
+			if (qty_total > cantidadMax) {
+				alert("No Puede agregar la cantidad de personas solicitadas, debe ser menor a "+cantidadMax);
+			} else {
+				cargarPrecio();
+			}
+		}
+		else {
+			cargarPrecio();
+		}
+	}
+	else{
+		cargarPrecio();
+	}
+}
+
+function quitarPaxsAddTours(renglon){
+  var idProveedor  = $("#idproveedor").val();
+  var id_prod_api  = $("#modalidad_tour").find(':selected').attr('id_product_api');
+  var statusApi    = parseInt($("#statusApi").val());
+  var paxs = parseInt(jQuery("#"+renglon).val()); 
+  var totalPaxs = paxs-1;
+ 
+  if(paxs>0){
+    //jQuery(".paxs_renglon_"+renglon).text(totalPaxs);
+    jQuery("#"+renglon).val(totalPaxs); 
+	jQuery("#"+renglon).val(totalPaxs);
+	qty_total = qty_total - 1;
+  	//console.log("qty_total  =  "+qty_total);
+	jQuery(".qtyTotal").text(qty_total);
+    if (id_prod_api !== '' && statusApi === 1) {
+    	var renglones = jQuery("#modal_renglon").val().split(',');
+        var cadvalores = "";
+    	for($i=0; $i<renglones.length; $i++){
+			cadvalores+=jQuery("#"+renglones[$i]).val()+",";
+		  }
+		  $("#valores_renglon").val(cadvalores);
+		if (idProveedor === '163') {
+			var valores_renglon = $("#valores_renglon").val();
+			availListXcaret(valores_renglon);
+		}
+		else if (idProveedor === '185'){
+			var turnoAPI = parseInt($("#turno_tour").val())
+			if (turnoAPI != 0) {
+				var cantidadMax  = parseInt($("#turno_tour").find(':selected').attr('canttickt'));
+			} else {
+				var cantidadMax  = 0;
+			}
+			
+			if (qty_total > cantidadMax) {
+				alert("No Puede agregar la cantidad de personas solicitadas, debe ser menor a "+cantidadMax);
+			} else {
+				cargarPrecio();
+			}
+		}
+		else {
+			cargarPrecio();
+		}
+		
+	}
+	else{
+		cargarPrecio();
+	}
+  } 
+}
+
+
+
+function agregarItemPagoDirecto(){
+	var modalidad_tour =  jQuery("#modalidad_tour").val();
+	var id_base        =  jQuery("#buscar_tour_hotel").val();    
+	var fecha          =  jQuery("#fecha_exc").val();
+	var id_excursion   =  jQuery("#idExc").val();
+	var lang           =  jQuery("#lang").val();
+	var adultos        =  jQuery("#adultos_tours").val();
+	var ninos          =  jQuery("#ninos_tours").val();
+	var infantes       =  jQuery("#infantes_tours").val();
+	var ocupacion      =  jQuery("#modalidad_tour").find(':selected').attr('ocupacion');
+	var segmento       =  jQuery("#modalidad_tour").find(':selected').attr('segmento');
+	var pcb            =  jQuery("#modalidad_tour").find(':selected').attr('pcb');
+	var id_modalidad =  jQuery("#modalidad_tour").val();
+	var hotel        = parseInt(jQuery("#buscar_tour_hotel").val());
+	var fecha_desde  = jQuery("#fecha_exc").val();
+	var fecha_hasta  = jQuery("#fecha_exc").val();
+	var adultos      = parseInt(jQuery("#adultos").val());
+	var ninos        = parseInt(jQuery("#ninos").val());
+	var infantes     = parseInt(jQuery("#infantes").val());
+	var nropaxs      = 0;
+	var ocupacion    = parseInt(jQuery("#modalidad_tour").find(':selected').attr('ocupacion'));
+	var segmento     = jQuery("#modalidad_tour").find(':selected').attr('segmento');
+	var factor_modular = parseInt(jQuery("#factor_modular").val());
+	var cad_valores    = "";
+	//var cad_valores  = jQuery("#valores_renglon").val();
+	var fecha_excursion  = jQuery("#fecha_exc").val();
+	var turno            = parseInt(jQuery("#turno_tour").val());
+	var recogida         =  jQuery('select[id="turno_tour"] option:selected').text();
+	var privada          = jQuery("#modal_privada").val();
+	var renglon          = jQuery("#modal_renglon").val();
+
+	var totales_renglon     = jQuery("#totales_renglon").val();
+	var precio_reserva      = jQuery("#precio_reserva").val();
+	var precio_reserva_descuento      = jQuery("#precio_reserva_descuento").val();
+	var nombre_modalidad    = jQuery('select[id="modalidad_tour"] option:selected').text();
+	var nombre_excursion    = jQuery("#modal_nameexcursion").val();
+	var precioAdulto        = jQuery("#precioadulto").val();
+	var precioNino          = jQuery("#precionino").val();
+	var precioImfante       = jQuery("#precioinfante").val();
+	var fecha_excursionSql  = formatoSql(fecha_excursion);
+	var total_item          = parseInt(jQuery("#total_item").val());
+	var idProveedor  		  = $("#idproveedor").val();
+	var idProductApi 	  = $("#modalidad_tour").find(':selected').attr('id_product_api');
+	var statusApi 		  = $("#statusApi").val();
+	var rateIdentifier	  = $("#datosApi").val();
+	var horaTurno 	  	  = $("#turno_tour").find(':selected').attr('datahora');
+	
+	if(parseInt(jQuery("#1").val()) === 0 ){
+		alert(app.lang.alert_minimo_adulto_dt);		
+		return false;	
+		}
+
+	var renglones = jQuery("#modal_renglon").val().split(',');  
+	for($i=0; $i<renglones.length; $i++){
+		cad_valores += jQuery("#"+renglones[$i]).val()+",";
+		if(parseInt(jQuery("#contable"+renglones[$i]).val()) == 1)
+			nropaxs+=parseInt(jQuery("#"+renglones[$i]).val());
+	}
+
+	//console.log(nropaxs  + " - "+  ocupacion);
+	if (ocupacion > 0) {
+		if (nropaxs % ocupacion != 0) {
+			alert(app.lang.alert_ocupacion+' '+ocupacion+'.');
+			return false;
+		}
+	}
+
+	if(fecha_excursion==""){
+		fecha_excursion = "00-00-0000";
+		alert(app.lang.dt_tours_validacion_fecha);
+		return false;
+	}
+
+	if(turno=="" || turno=="0"){
+		alert(app.lang.validacion_turno_excursion);
+		return false;
+	}
+	if(precio_reserva!=""){
+		if(parseInt(precio_reserva)<=0){
+			return false
+		}
+	}else{
+		return false;
+	}
+	//////console.log(fecha_excursionSql);
+	var total_carrito    = parseFloat(jQuery("#total_carrito").text())+parseFloat(precio_reserva);
+	//console.log('opcion=addshopMDetalle&lang='+lang+'&modalidad='+id_modalidad+'&hotel='+hotel+'&turno='+turno+'&fechad='+fecha_desde+'&fechah='+fecha_hasta+'&fecha='+fecha_excursionSql+'&privada='+privada+'&renglon='+renglon+'&totales='+totales_renglon+'&valores='+cad_valores+'&precio='+precio_reserva+'&precio_reserva_descuento='+precio_reserva_descuento+'&ocupacion='+ocupacion+'&segmento='+segmento+'&id_excursion='+id_excursion+"&id_pcb="+pcb);
+	if (hotel > 0 && nropaxs > 0) {
+		jQuery.ajax({
+			beforeSend: function(){    
+				//HoldOn.open('sk-circle');                 
+			},
+			type: 'POST',
+			url: 'ajax/ajax.php',
+			data: 'opcion=addshopMDetalle&lang='+lang+'&modalidad='+id_modalidad+'&hotel='+hotel+'&turno='+turno+'&fechad='+fecha_desde+'&fechah='+fecha_hasta+'&fecha='+fecha_excursionSql+'&privada='+privada+'&renglon='+renglon+'&totales='+totales_renglon+'&valores='+cad_valores+'&precio='+precio_reserva+'&precio_reserva_descuento='+precio_reserva_descuento+'&ocupacion='+ocupacion+'&segmento='+segmento+'&id_excursion='+id_excursion+"&id_pcb="+pcb+"&idProductApi="+idProductApi+"&statusApi="+statusApi+"&rateIdentifier="+rateIdentifier+"&idProveedor="+idProveedor+'&turnoApi='+horaTurno,
+			dataType: 'xml',
+			success: function(xml){   
+				total_item = total_item + 1;
+				jQuery("#total_item").val(total_item);    
+				var id_item = jQuery("id_items",xml).text();
+				var total_orden = jQuery("total_orden",xml).text();
+				var id_orden = jQuery("idorden",xml).text();
+				var nro_orden_detalle = jQuery("nro_orden_detalle",xml).text();			
+				var hotel_modalidad = jQuery("hotel_modalidad",xml).text();
+				var turno_modalidad = jQuery("turno_modalidad",xml).text();
+				var agrego = parseInt(jQuery("agrego",xml).text());
+				var restriccion = parseInt(jQuery("restriccion",xml).text());	
+				jQuery("#numero_orden").val(nro_orden_detalle);
+				jQuery("#id_orden").val(id_orden);
+				jQuery("#total_orden_usd").val(total_orden);
+				
+				if(restriccion == 0){
+					
+					if (agrego == 1) {       
+						var login = parseInt(jQuery("login",xml).text());
+						if(!login){
+							//localStorage.codigoLocal=jQuery("idorden",xml).text();
+							////console.log("localStorage="+localStorage.codigoLocal);
+						}    
+						var arrList = [];
+						let itemdata = {
+							item_name: jQuery("item_name",xml).text(),
+							price: jQuery("price",xml).text(),
+							item_category: "Tour", 
+							item_category2: jQuery("item_category2",xml).text(),
+							item_category3: jQuery("item_category3",xml).text(),
+							item_variant: jQuery("item_variant",xml).text(),
+							quantity: jQuery("quantity",xml).text(),
+							affiliation: "otium"															
+						}
+						arrList.push(itemdata);
+						//addCartDataLayer(arrList);											
+
+							//console.log(itemdata);
+							var clientID = "";	
+							try{ 
+								if(document.cookie.indexOf("_ga=")>-1){
+									gaCookie = document.cookie.split("_ga=")[1].split(";")[0].split(".");
+									clientID = gaCookie[2] + "." + gaCookie[3];
+									//console.log("Cliente ID = " + clientID);
+								}else{
+									//console.log("NO consiguio");
+								}
+							}catch(e){
+							//console.log("Error al obtener la cookie de GA")
+							}
+
+							var sessionID = "";	
+							var sessionNUMBER = "";
+							try{ 
+								if(document.cookie.indexOf("_ga_ZDJZHXCJBH=")>-1){
+									gaCookie = document.cookie.split("_ga_ZDJZHXCJBH=")[1].split(";")[0].split(".");
+									sessionID = gaCookie[2];
+									sessionNUMBER = gaCookie[3];
+									//console.log("Session ID = " + sessionID);
+								}else{
+									//console.log("NO consiguio");
+								}
+							}catch(e){
+							console.log("Error al obtener la cookie de GA")
+							}
+							HoldOn.close();
+							//
+							var proveedor = parseInt($("#idproveedor").val());
+							var statusApi= parseInt($("#statusApi").val());
+							if (statusApi == 1 && proveedor == 163) {
+								reservarHoldXcaret(proveedor,id_item);
+								//ACOMPLETAR RESERVA DINAMICA!
+							} else {
+
+							}
+					} else {  
+						var err_cocupacion = parseInt(jQuery("err_ocupacion",xml).text());
+						if(err_cocupacion == 1){
+							alert("intente nuevamente");
+						}
+						alert(app.lang.alert_modalidad_no_add);
+						//HoldOn.close();
+					}
+				}else{
+					if(parseInt(jQuery("alert_servicio",xml).text()) == 1){					
+						alert(jQuery("validacion_alert_eli",xml).text());
+					}
+					//HoldOn.close();            
+					jQuery('.mensaje_modal_tours').removeClass('ocultar');
+					//alert("Disculpe la modalidad seleccionada no opera para la fecha seleccionada. por favor seleccine otra fecha");
+				}
+			}
+			}).fail( function( jqXHR, textStatus, errorThrown ) {
+				alert( jqXHR );
+				alert( textStatus );
+				alert( errorThrown );
+			});
+
+	} else {
+		alert(app.lang.alert_debe_completar_info);
+	} 
+
+
+}
+
+
+
+function cargarPrecio(){ 
+
+  var modalidad_tour =  jQuery("#modalidad_tour").val();
+  var id_base        =  jQuery("#buscar_tour_hotel").val();    
+  var fecha          =  jQuery("#fecha_exc").val();
+  var id_excursion   =  jQuery("#idExc").val();
+  var adultos        =  jQuery("#adultos_tours").val();
+  var ninos          =  jQuery("#ninos_tours").val();
+  var infantes       =  jQuery("#infantes_tours").val();
+  var ocupacion      =  jQuery("#modalidad_tour").find(':selected').attr('ocupacion');
+  var segmento       =  jQuery("#modalidad_tour").find(':selected').attr('segmento');
+  var pcb            =  jQuery("#modalidad_tour").find(':selected').attr('pcb');
+
+  /*11-03-2021*/
+  if(jQuery('#chk_privada').prop('checked') ) {
+    var privado = 1;
+	jQuery("#modal_privada").val('1'); 
+  }else{
+	var privado = 0;
+	jQuery("#modal_privada").val('0'); 
+  }
+  /*11-03-2021*/
+
+  /*if(parseInt(adultos) <= 0) {
+    jQuery("#adultos_tours").val(1);
+    return false;
+  }*/
+
+  var fechadesde  = formatoSql(fecha);
+  var fechahasta  = formatoSql(fecha);
+
+  var renglones = jQuery("#modal_renglon").val().split(',');
+  var cadvalores = "";
+  for($i=0; $i<renglones.length; $i++){
+	cadvalores+=jQuery("#"+renglones[$i]).val()+",";
+  }
+  // alert(cadvalores);  
+  console.log( 'opcion=modalPrecio&id_modalidad='+modalidad_tour+'&id_base='+id_base+'&fechadesde='+fechadesde+'&fechahasta='+fechahasta+'&id_excursion='+id_excursion+'&adultos='+adultos+'&ninos='+ninos+'&infantes='+infantes+'&ocupacion='+ocupacion+'&segmento='+segmento+'&pcb='+pcb+'&privado='+privado+'&cadvalores='+cadvalores+'&renglones='+jQuery("#modal_renglon").val());
+  
+  if(fechadesde != ""){
+    jQuery.ajax({
+        beforeSend: function(){ 		 
+          //jQuery("#agregaralcarro").hide();                 
+        },
+        type: 'POST',
+        url: 'ajax/ajax.php',
+        data: 'opcion=modalPrecio&id_modalidad='+modalidad_tour+'&id_base='+id_base+'&fechadesde='+fechadesde+'&fechahasta='+fechahasta+'&id_excursion='+id_excursion+'&adultos='+adultos+'&ninos='+ninos+'&infantes='+infantes+'&ocupacion='+ocupacion+'&segmento='+segmento+'&pcb='+pcb+'&privado='+privado+'&cadvalores='+cadvalores+'&renglones='+jQuery("#modal_renglon").val(),
+        dataType: 'xml',
+        success: function(xml){         
+         
+              var arrRenglon = jQuery("#modal_renglon").val().split(',');
+			  var privado    = parseInt(jQuery("ocultar_privado",xml).text());
+			  //console.log("Privado  = " + privado);
+              //jQuery("#modal_privada").val(jQuery("privada",xml).text());
+              jQuery("#totales_renglon").val(jQuery("totales_renglon",xml).text());
+              jQuery("#valores_renglon").val(jQuery("valor_renglon",xml).text());
+              jQuery("#precioadulto").val(jQuery("precioadulto",xml).text());
+              jQuery("#precionino").val(jQuery("precionino",xml).text());
+			  jQuery("#precioinfante").val(jQuery("precioinfante",xml).text());
+			  var no_aplica_cupon = jQuery("no_aplica_cupon",xml).text();
+			  var no_aplica_cupon_zona = parseInt(jQuery("no_aplica_cupon_zona",xml).text());
+			  //console.log("no aplica cupon ".no_aplica_cupon);
+			  if(privado === 1){
+			  	jQuery("#mod_privada").addClass('ocultar'); 
+				jQuery("#chk_privada").prop("checked", false); 			
+			  }else if(privado === 0) {
+				jQuery("#mod_privada").removeClass('ocultar'); 			
+			  }
+
+			  jQuery("#title_desde").text(app.lang.titulo_precio);
+             
+              var precio = jQuery("precio_total_modalidad",xml).text();
+			  var precio_descuento = jQuery("precio_descuento_modalidad",xml).text();
+			
+				jQuery("#precio").css('display', '');
+				if(parseFloat(jQuery("precio_descuento_modalidadHTML",xml).text())>0){
+					console.log("entro 1");	
+					jQuery("#precio,#precioCompraRapida").text(jQuery("precio_total_modalidadHTML",xml).text() + " USD");		  
+					jQuery("#precio_descuento,#precio_descuentoCompraRapida").text(jQuery("precio_descuento_modalidadHTML",xml).text() + " USD");
+					jQuery("#precio_descuento").css('display','');
+					jQuery("#precio,#precioCompraRapida").removeClass('text-danger');
+					jQuery("#precio,#precioCompraRapida").removeClass('text-center');
+					jQuery("#precio,#precioCompraRapida").removeClass('ln-h-20');
+					jQuery("#precio,#precioCompraRapida").addClass('ltr-cccccc ltr-20 tch-txt ltr-f-w-b');			
+				}else if(parseInt(no_aplica_cupon) == 1 && parseInt(jQuery("precio_descuento_modalidadHTML",xml).text())==0 && parseInt(jQuery("existe_cupon",xml).text())==1){	
+					console.log("entro 2");	
+					
+					jQuery("#precio_descuento,#precio_descuentoCompraRapida").text(jQuery("precio_total_modalidadHTML",xml).text() + " USD");
+					if(no_aplica_cupon_zona)
+						jQuery("#precio,#precioCompraRapida").text(app.lang.etiqueta_dt_no_aplica_cupon_zona);
+					else
+						jQuery("#precio,#precioCompraRapida").text(app.lang.etiqueta_dt_no_aplica_cupon);
+					
+					jQuery("#precio_descuento,#precio_descuentoCompraRapida").parent().css('display','block');
+					
+					jQuery("#precio,#precioCompraRapida").addClass('text-danger');
+					jQuery("#precio,#precioCompraRapida").addClass('ltr-14 ln-h-20 text-center');
+					jQuery("#precio,#precioCompraRapida").removeClass('ltr-25 tch-txt ltr-f-w-b');
+
+
+
+
+				}else if(parseInt(jQuery("precio_descuento_modalidadHTML",xml).text())==0){
+					console.log("entro 3");	
+					jQuery("#precio_descuento,#precio_descuentoCompraRapida").css('display','none');
+					jQuery("#precio_descuento,#precio_descuentoCompraRapida").text("0 USD");
+					jQuery("#precio,#precioCompraRapida").text(jQuery("precio_total_modalidadHTML",xml).text() + " USD");
+					jQuery("#precio,#precioCompraRapida").removeClass('text-danger');
+					jQuery("#precio,#precioCompraRapida").removeClass('text-center');
+					jQuery("#precio,#precioCompraRapida").removeClass('ln-h-20');
+					//jQuery("#precio").addClass('tch-txt ltr-f-w-b');
+				}
+
+              jQuery("#precio_reserva").val(precio);  
+              jQuery("#precio_reserva_descuento").val(precio_descuento);  
+			  
+			  //jQuery("#agregaralcarro").removeAttr('disabled'); 
+			  //jQuery("#agregaralcarro").show();  
+			   
+        }
+      }).fail( function( jqXHR, textStatus, errorThrown ) {
+          alert( jqXHR );
+          alert( textStatus );
+          alert( errorThrown );
+      }); 
+    }
+ }
+
+
+
+jQuery(document).ready(function () {
+
+botonDT_tours();
+
+
+jQuery("#app").addClass("fnd_EBEBEB_ip");
+jQuery(".detallesModalidades_cabec").click();
+
+});
+
+var minDias = jQuery("#mindias").val();
+var dias    = jQuery("#arrDiasBloqeuados").val().split(','); 
+
+if(jQuery("#buscar_fecha_de_llegada").val()!=""){ // cuando venga de la lista de tours
+	var vStarDate = jQuery("#buscar_fecha_de_llegada_es").val();
+	var vEndDate  = jQuery("#buscar_fecha_de_salida_es").val();
+}else{  // Caundo venga del home o tour
+	var vStarDate = "+"+minDias+"d"; //
+	var vEndDate  = '';
+}
+
+//jQuery(".fecha_exc").datepicker("destroy");        
+jQuery(".fecha_exc").datepicker({ 
+	format: 'dd-mm-yyyy',
+	autoclose: true,    
+	startDate: vStarDate,	
+	endDate: vEndDate,	
+	daysOfWeekDisabled: dias
+});        
+
+//jQuery(".fecha_exc").datepicker("refresh");  
+
+//resolucion boton carrito
+function botonDT_tours() {
+	//alert("hola dt");
+			jQuery(window).resize(function () {
+				var widthW = jQuery(window).width();
+				var pc = 992;
+				var pc_1 = 1200;
+				var movil = 991;
+				var movil_0 = 768;
+				var movil_1 = 767;
+				var movilPc = 1199;
+				if (widthW <= movil) {
+					//jQuery('.botonMovil').addClass('col-xs-3');
+					jQuery('.botonMovilC1').removeClass('col-xs-4').addClass('col-xs-6');
+					jQuery('.botonMovilC2').removeClass('col-xs-4').addClass('col-xs-6');
+					jQuery('.menuPC2').removeClass('header-widget');
+					//botones carusel
+					jQuery('.owl-buttons').addClass('col-xs-12');
+					//titulos parte movil del header del carrito
+					jQuery('.pestana_0_0').removeClass('mL_25_rp');
+					jQuery('.pestana_0_0').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_0_0_0').removeClass('posR_r_7');
+					jQuery('.pestana_0_1').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_0_1').removeClass('pL_10_ip');
+					jQuery('.pestana_1_0').removeClass('mL_25_rp');
+					jQuery('.pestana_1_0').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_1_0_0').removeClass('posR_r_7');
+					jQuery('.pestana_1_1').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_1_1').removeClass('pL_10_ip');
+					jQuery('.pestana_2_0').removeClass('mL_25_rp');
+					jQuery('.pestana_2_0').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_2_0_0').removeClass('posR_r_7');
+					jQuery('.pestana_2_1').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_2_1').removeClass('pL_10_ip');
+					jQuery('.container_pestanas').addClass('centrar');
+					//clases para tamano de 320 a 413
+					jQuery('.container_pestanas').addClass('pL_0_ip');
+					jQuery('.pestana_0').addClass('pR_0_ip');
+					jQuery('.pestana_0').addClass('pL_0_ip');
+					jQuery('.pestana_1').addClass('pR_0_ip');
+					jQuery('.pestana_1').addClass('pL_0_ip');
+					jQuery('.pestana_2').addClass('pR_0_ip');
+					jQuery('.pestana_2').addClass('pL_0_ip');
+					jQuery('.container_pestanas').addClass('pR_0_ip');
+				} else {
+					//jQuery('.botonMovil').removeClass('col-xs-3');
+					jQuery('.botonMovilC1').removeClass('col-xs-6').addClass('col-xs-4');
+					jQuery('.botonMovilC2').removeClass('col-xs-6').addClass('col-xs-4');
+					jQuery('.menuPC2').addClass('header-widget');
+					//botones carusel
+					jQuery('.owl-buttons').removeClass('col-xs-12');
+					//ojote
+					//titulos parte movil del header del carrito
+					//jQuery('.pestana_0_0').addClass('mL_25_rp');
+					//jQuery('.pestana_0_0_0').addClass('posR_r_7');
+					//jQuery('.pestana_0_1').addClass('pL_10_ip_rp');
+					//jQuery('.pestana_1_0').addClass('mL_25_rp');
+					//jQuery('.pestana_1_0_0').addClass('posR_r_7');
+					//jQuery('.pestana_1_1').addClass('pL_10_ip_rp');
+					//jQuery('.pestana_2_0').addClass('mL_25_rp');
+					//jQuery('.pestana_2_0_0').addClass('posR_r_7');
+					//jQuery('.pestana_2_1').addClass('pL_10_ip_rp');
+					jQuery('.container_pestanas').addClass('centrar');
+				}
+				//movil y pc desde 993 hasta 1199
+				if (widthW <= movilPc) {
+					//titulos parte movil del header del carrito
+					jQuery('.pestana_0_0').removeClass('mL_25_rp');
+					jQuery('.pestana_0_0').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_0_0_0').removeClass('posR_r_7');
+					jQuery('.pestana_0_1').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_0_1').removeClass('pL_10_ip');
+					jQuery('.pestana_1_0').removeClass('mL_25_rp');
+					jQuery('.pestana_1_0').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_1_0_0').removeClass('posR_r_7');
+					jQuery('.pestana_1_1').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_1_1').removeClass('pL_10_ip');
+					jQuery('.pestana_2_0').removeClass('mL_25_rp');
+					jQuery('.pestana_2_0').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_2_0_0').removeClass('posR_r_7');
+					jQuery('.pestana_2_1').removeClass('pL_10_ip_rp');
+					jQuery('.pestana_2_1').removeClass('pL_10_ip');
+				} else if (widthW >= pc_1) {
+					jQuery('.container_pestanas').removeClass('centrar');
+				}
+				//movil hasta 767
+				if (widthW <= movil_1) {
+					//clases para el responsive de los resultados de la busqueda de traslados
+					jQuery('.container_m_0').removeClass('pL_20_ip pR_20_ip').addClass('pL_0_ip pR_0_ip');
+					jQuery('.container_m_1').addClass('pT_20 pL_20_ip pR_20_ip');
+					jQuery('.container_m_2').removeClass('pL_0_ip');
+					jQuery('.container_m_3').removeClass('pL_0_ip pR_0_ip');
+					jQuery('.container_m_5').addClass('mL_0_ip mR_0_ip');
+					jQuery('.container_m_6').addClass('pL_0_ip pR_0_ip');
+					jQuery('.containerImagen_0').addClass('w_irt');
+					jQuery('.detallesModalidades_rp').show();
+					jQuery('.detallesModalidades').hide();
+				} else {
+					//clases para el responsive de los resultados de la busqueda de traslados
+					jQuery('.container_m_0').addClass('pL_20_ip pR_20_ip').removeClass('pL_0_ip pR_0_ip');
+					jQuery('.container_m_1').removeClass('pT_20 pL_20_ip pR_20_ip');
+					jQuery('.container_m_2').addClass('pL_0_ip');
+					jQuery('.container_m_3').addClass('pL_0_ip pR_0_ip');
+					jQuery('.container_m_5').removeClass('mL_0_ip mR_0_ip');
+					jQuery('.container_m_6').addClass('pL_0_ip').removeClass('pR_0_ip');
+					jQuery('.containerImagen_0').removeClass('w_irt');
+					jQuery('.detallesModalidades_rp').hide();
+					jQuery('.detallesModalidades').show();
+				}
+			});		
+			
+}
+
+function formatoSql(string) {
+	var info = string.split('-').reverse().join('-');
+	return info;
+}
+
+function formato(string) {
+	var info = string.split('/').reverse().join('-');
+	return info;
+}
+
+
+function addCartDataLayer(arrList){
+    
+    window.dataLayer = window.dataLayer || [];
+	window.dataLayer.push({ ecommerce: null })
+    window.dataLayer.push({										
+    	event: "add_to_cart",
+        ecommerce: {			
+            items:arrList
+        }
+    });
+   //console.log(arrList);
+}
+
+
+function agregarItemCarrito(){
+
+  var modalidad_tour =  jQuery("#modalidad_tour").val();
+  var id_base        =  jQuery("#buscar_tour_hotel").val();    
+  var fecha          =  jQuery("#fecha_exc").val();
+  var id_excursion   =  jQuery("#idExc").val();
+  var lang           = jQuery("#lang").val();
+  var adultos        =  jQuery("#adultos_tours").val();
+  var ninos          =  jQuery("#ninos_tours").val();
+  var infantes       =  jQuery("#infantes_tours").val();
+  var ocupacion      =  jQuery("#modalidad_tour").find(':selected').attr('ocupacion');
+  var segmento       =  jQuery("#modalidad_tour").find(':selected').attr('segmento');
+  var pcb            =  jQuery("#modalidad_tour").find(':selected').attr('pcb');
+  var id_modalidad =  jQuery("#modalidad_tour").val();
+  var hotel        = parseInt(jQuery("#buscar_tour_hotel").val());
+  var fecha_desde  = jQuery("#fecha_exc").val();
+  var fecha_hasta  = jQuery("#fecha_exc").val();
+  var adultos      = parseInt(jQuery("#adultos").val());
+  var ninos        = parseInt(jQuery("#ninos").val());
+  var infantes     = parseInt(jQuery("#infantes").val());
+  var nropaxs      = 0;
+  var ocupacion    = parseInt(jQuery("#modalidad_tour").find(':selected').attr('ocupacion'));
+  var segmento     = jQuery("#modalidad_tour").find(':selected').attr('segmento');
+  var factor_modular = parseInt(jQuery("#factor_modular").val());
+  var cad_valores    = "";
+  var idProveedor  		  = $("#idproveedor").val();
+  //var cad_valores  = jQuery("#valores_renglon").val();
+  var fecha_excursion  = jQuery("#fecha_exc").val();
+  if (idProveedor !== '185') {
+  	var turno  = parseInt(jQuery("#turno_tour").val());
+  } else {
+  	var turno  = jQuery("#turno_tour").val();
+  }
+  var recogida         =  jQuery('select[id="turno_tour"] option:selected').text();
+  var privada          = jQuery("#modal_privada").val();
+  var renglon          = jQuery("#modal_renglon").val();
+
+  var totales_renglon     = jQuery("#totales_renglon").val();
+  var precio_reserva                = jQuery("#precio_reserva").val();
+  var precio_reserva_descuento      = jQuery("#precio_reserva_descuento").val();
+  var nombre_modalidad    = jQuery('select[id="modalidad_tour"] option:selected').text();
+  var nombre_excursion    = jQuery("#modal_nameexcursion").val();
+  var precioAdulto        = jQuery("#precioadulto").val();
+  var precioNino          = jQuery("#precionino").val();
+  var precioImfante       = jQuery("#precioinfante").val();
+  var fecha_excursionSql  = formatoSql(fecha_excursion);
+  var total_item          = parseInt(jQuery("#total_item").val());
+  var idProductApi 	  	  = $("#modalidad_tour").find(':selected').attr('id_product_api');
+  var statusApi 		  = $("#statusApi").val();
+  var rateIdentifier	  = $("#datosApi").val();
+  var horaTurno 	  	  = $("#turno_tour").find(':selected').attr('datahora');
+  
+  if(parseInt(jQuery("#1").val()) === 0 ){
+	alert(app.lang.alert_minimo_adulto_dt);		
+	return false;	
+	}
+
+  var renglones = jQuery("#modal_renglon").val().split(',');  
+  for($i=0; $i<renglones.length; $i++){
+	cad_valores += jQuery("#"+renglones[$i]).val()+",";
+	if(parseInt(jQuery("#contable"+renglones[$i]).val()) == 1)
+		nropaxs+=parseInt(jQuery("#"+renglones[$i]).val());
+  }
+
+  //console.log(nropaxs  + " - "+  ocupacion);
+  if (ocupacion > 0) {
+     if (nropaxs % ocupacion != 0) {
+        alert(app.lang.alert_ocupacion+' '+ocupacion+'.');
+        return false;
+     }
+  }
+
+  if(fecha_excursion==""){
+    fecha_excursion = "00-00-0000";
+    alert(app.lang.dt_tours_validacion_fecha);
+    return false;
+  }
+  if(turno=="" || turno=="0" || turno==null){
+    alert(app.lang.validacion_turno_excursion);
+    return false;
+  }
+  if(precio_reserva!=""){
+	if(parseInt(precio_reserva)<=0){
+		return false
+	}
+  }else{
+	  return false;
+  }
+  //////console.log(fecha_excursionSql);
+  var total_carrito    = parseFloat(jQuery("#total_carrito").text())+parseFloat(precio_reserva);
+  console.log('opcion=addshopModalCarrito&lang='+lang+'&modalidad='+id_modalidad+'&hotel='+hotel+'&turno='+turno+'&fechad='+fecha_desde+'&fechah='+fecha_hasta+'&fecha='+fecha_excursionSql+'&privada='+privada+'&renglon='+renglon+'&totales='+totales_renglon+'&valores='+cad_valores+'&precio='+precio_reserva+'&precio_reserva_descuento='+precio_reserva_descuento+'&ocupacion='+ocupacion+'&segmento='+segmento+'&id_excursion='+id_excursion+"&id_pcb="+pcb+"&idProductApi="+idProductApi+"&statusApi="+statusApi+"&rateIdentifier="+rateIdentifier+"&idProveedor="+idProveedor+'&turnoApi='+horaTurno);
+  if (hotel > 0 && nropaxs > 0) {
+	jQuery.ajax({
+		beforeSend: function(){    
+			HoldOn.open('sk-circle');                 
+		},
+		type: 'POST',
+		url: 'ajax/ajax.php',
+		data: 'opcion=addshopModalCarrito&lang='+lang+'&modalidad='+id_modalidad+'&hotel='+hotel+'&turno='+turno+'&fechad='+fecha_desde+'&fechah='+fecha_hasta+'&fecha='+fecha_excursionSql+'&privada='+privada+'&renglon='+renglon+'&totales='+totales_renglon+'&valores='+cad_valores+'&precio='+precio_reserva+'&precio_reserva_descuento='+precio_reserva_descuento+'&ocupacion='+ocupacion+'&segmento='+segmento+'&id_excursion='+id_excursion+"&id_pcb="+pcb+"&idProductApi="+idProductApi+"&statusApi="+statusApi+"&rateIdentifier="+rateIdentifier+"&idProveedor="+idProveedor+'&turnoApi='+horaTurno,
+		dataType: 'xml',
+		success: function(xml){   
+			total_item = total_item + 1;
+			jQuery("#total_item").val(total_item);    
+			var id_item = jQuery("id_items",xml).text();
+			var total_orden = jQuery("total_orden",xml).text();
+			var id_orden = jQuery("idorden",xml).text();
+			var hotel_modalidad = jQuery("hotel_modalidad",xml).text();
+			var turno_modalidad = jQuery("turno_modalidad",xml).text();
+			var agrego = parseInt(jQuery("agrego",xml).text());
+			var restriccion = parseInt(jQuery("restriccion",xml).text());			
+			if(restriccion == 0){
+				
+				if (agrego == 1) {       
+					var login = parseInt(jQuery("login",xml).text());
+					if(!login){
+						localStorage.codigoLocal=jQuery("idorden",xml).text();
+						////console.log("localStorage="+localStorage.codigoLocal);
+					}    
+					var arrList = [];
+					let itemdata = {
+						item_name: jQuery("item_name",xml).text(),
+						price: jQuery("price",xml).text(),
+						item_category: "Tour", 
+						item_category2: jQuery("item_category2",xml).text(),
+						item_category3: jQuery("item_category3",xml).text(),
+						item_variant: jQuery("item_variant",xml).text(),
+						quantity: jQuery("quantity",xml).text(),
+						affiliation: "otium"
+						
+					}
+					arrList.push(itemdata);
+					addCartDataLayer(arrList);
+					HoldOn.close();   					
+					                           
+					jQuery(".carrito_cantidad").html(jQuery("nroitems",xml).text());
+					jQuery("#mensajeDialogBox").modal();    
+					//console.log("despues modal");   
+					buscarIdOrder();
+					// cargarcontador();
+				} else {
+					
+
+					var err_cocupacion = parseInt(jQuery("err_ocupacion",xml).text());
+					if(err_cocupacion == 1){
+						alert("intente nuevamente");
+					}
+
+					alert(app.lang.alert_modalidad_no_add);
+					HoldOn.close();
+				}
+			}else{
+				if(parseInt(jQuery("alert_servicio",xml).text()) == 1){					
+					alert(jQuery("validacion_alert_eli",xml).text());
+				}
+				HoldOn.close();            
+				jQuery('.mensaje_modal_tours').removeClass('ocultar');
+				//alert("Disculpe la modalidad seleccionada no opera para la fecha seleccionada. por favor seleccine otra fecha");
+			}
+		}
+		}).fail( function( jqXHR, textStatus, errorThrown ) {
+			alert( jqXHR );
+			alert( textStatus );
+			alert( errorThrown );
+		});
+
+  } else {
+       alert(app.lang.alert_debe_completar_info);
+  }
+}
+
+function cargarReviws(){	
+
+	var id_excursion =  jQuery("#idExc").val();
+	var idLang   = jQuery("#idlangActual").val(); 
+	var lang  = jQuery("#lang").val(); 
+	var idsReviws = jQuery("#idsReviws").val(); 
+
+		jQuery.ajax({
+			beforeSend: function(){ 
+				jQuery("#loading").fadeIn();        
+				//jQuery('#resultado').html();        
+			},
+			type: 'POST',
+			url: 'ajax/ajaxDetalleTours.php',
+			data: 'opcion=paginacion&lang='+lang+'&idTours='+id_excursion+"&idlangAJAX="+idLang+'&idsReviws='+idsReviws,
+			dataType: 'xml',			
+			success: function(xml){     
+					var idReviws     = jQuery("idsReviws",xml).text();
+					
+					var ocultar_btn  = parseInt(jQuery("ocultar_btn",xml).text());
+					if(ocultar_btn == 0){
+						jQuery("#btn_cargar_rv").addClass("ocultar"); 
+					}
+
+					jQuery("#idsReviws").val(idReviws); 				
+					var $html = "";
+					var $htmlItem = "";		
+					var i=0;		
+					var arrSlider = [];				                           
+					jQuery("item",xml).each(
+						function(id){      
+						            
+							i++;                                                  
+							var num1= jQuery("item",xml).get(id);  
+							var modalImg     = parseInt(jQuery("modalImg",num1).text());    
+							$htmlItem += '<div class="col-12 divReview">'+
+							'<div class="row rowReview">'+
+								'<div class="col-12 col-lg-3 col-xl-3 col-xxl-3 paddingCardMov">'+
+									'<div class="row">'+
+										'<div class="col-12 col-lg-4 col-xl-4 col-xxl-4">'+
+											'<div class="d-none-s iconoLetraOrdenadorReview">'+jQuery("letraInicial",num1).text()+'</div>'+
+											'<div class="d-none-x iconoLetraMovilReview">'+jQuery("letraInicial",num1).text()+'</div>'+
+										'</div>'+
+										'<div class="col-12 col-lg-8 col-xl-8 col-xxl-8">'+
+											'<p class="titulo1Review">'+
+												jQuery("nombre_titular",num1).text()+ " "+jQuery("apellido_titular",num1).text()+
+											'</p>'+
+											'<p class="titulo2Review">'+
+												jQuery("fecha_review",num1).text()+
+											'</p>'+
+											'<p class="mb-3">'+
+												jQuery("stars_review",num1).text()+
+											'</p>'+
+										'</div>'+
+									'</div>'+
+								'</div>'+
+								'<div class="col-12 '+jQuery("texto_completo",num1).text()+' paddingCardMov">'+
+									'<p class="titulo3Review">'+
+											jQuery("nombre_modalidad",num1).text()+
+									'</p>'+
+									'<div id="accordion'+jQuery("contador",num1).text()+'">'+
+										// '<div class="card paddingCardMov">'+
+										// 	'<div class="card-header p-0 bg-transparent border-0" id="heading'+jQuery("contador",num1).text()+'">'+
+										// 		'<div id="collapse'+jQuery("contador",num1).text()+'" class="collapse show" aria-labelledby="heading'+jQuery("contador",num1).text()+'" data-parent="#accordion'+jQuery("contador",num1).text()+'">'+
+										// 			'<div class="card-body p-0">'+
+										// 				'<p class="textoReview" data-parent="#accordion'+jQuery("contador",num1).text()+'">'+
+										// 					jQuery("comentario_review_limitado",num1).text()+
+										// 				'</p>'+
+										// 			'</div>'+
+										// 		'</div>'+
+										// 	'</div>'+
+										// '</div>'+
+										// '<div class="card paddingCardMov">'+
+										// 	'<div class="card-header p-0 bg-transparent border-0" id="heading'+jQuery("contadorR",num1).text()+'">'+
+										// 		'<div id="collapse'+jQuery("contadorR",num1).text()+'" class="collapse" aria-labelledby="heading'+jQuery("contadorR",num1).text()+'" data-parent="#accordion'+jQuery("contador",num1).text()+'">'+
+										// 			'<div class="card-body p-0">'+
+										// 				'<p class="textoReview" data-parent="#accordion'+jQuery("contador",num1).text()+'">'+
+										// 					jQuery("comentario_review",num1).text()+
+										// 				'</p>'+
+										// 			'</div>'+
+										// 		'</div>'+
+										// 	'</div>'+
+										// '</div>'+
+										'<div class="card paddingCardMov">'+
+										    '<div class="card-body p-0">'+
+										        '<p class="textoReview d-inline" data-comentario-limitado="'+jQuery("comentario_review_limitado",num1).text()+'" data-comentario-completo="'+jQuery("comentario_review",num1).text()+'">'+jQuery("comentario_review_limitado",num1).text()+'</p>'+
+										        jQuery("botonVerMas",num1).text()+'</button>'+
+										    '</div>'+
+										'</div>'+
+
+									'</div>'+
+								'</div>'+
+
+								jQuery("icono_imagen",num1).text()+
+							'</div>'+
+						'</div>';
+						var SliderItem=[];
+							if(modalImg>0){
+
+								$htmlItem +=
+								'<div class="modal fade bd-example-modal-lg bck-c-rgba-0-0-0-0-8" id="modalImgReview'+jQuery("contador",num1).text()+'" tabindex="-1" role="dialog" aria-labelledby="modalImgReview'+jQuery("contador",num1).text()+'" aria-hidden="true">'+
+									'<div class="modal-dialog modal-dialog-centered modal-lg">'+
+										'<div class="modal-content bg-transparent">'+
+											'<div class="swiper mySwiper'+jQuery("contador",num1).text()+'">'+
+												'<div class="swiper-wrapper">'+										
+															
+												'</div>'+
+												'<div class="swiper-button-next fa" ></div>'+
+												'<div class="swiper-button-prev fa" ></div>'+
+											'</div>'+
+										'</div>'+
+									'</div>'+
+								'</div>';	
+								var j=0;
+								var contador = jQuery("contador",num1).text();
+								
+								jQuery("img"+contador,xml).each(
+								function(idc){           
+									var num2= jQuery("img"+contador,xml).get(idc);  
+									SliderItem.push(jQuery("image",num2).text());
+									j++;
+								});  	
+								arrSlider.push({"contador":contador, "imagenes":SliderItem});
+							}				
+						}       
+					);  
+						
+					
+						jQuery("#reviews").append($htmlItem); 	
+						for(var $i=0; $i<arrSlider.length;$i++){
+							var contador = arrSlider[$i].contador;							
+							var mySwiper = new Swiper(".mySwiper"+contador, {
+							navigation: {
+								nextEl: ".swiper-button-next",
+								prevEl: ".swiper-button-prev",
+							},	
+							});	
+							var arrImg=arrSlider[$i].imagenes;
+							var content = "";
+							for(var $j=0; $j<arrImg.length;$j++){
+								content+='<div class="swiper-slide">'+
+											'<img data-src="'+arrImg[$j]+'" src="'+arrImg[$j]+'" class="lozad" data-loaded="true">'+
+										  '</div>';										
+							}
+							mySwiper.appendSlide(content);
+							mySwiper.update(true);
+						}
+					
+			}
+		}).fail( function( jqXHR, textStatus, errorThrown ) {
+			alert( jqXHR );
+			alert( textStatus );
+			alert( errorThrown );			      
+		});	
+}
+
+
+function modalidadesConsulta_visu()
+	{
+		if (jQuery(".modalidadesConsulta").is(":hidden"))
+		{
+			jQuery(".modalidadesConsulta").slideToggle("slow");
+		}
+	}
+
+	function detallesRestricciones()
+	{
+		var widthW = jQuery(window).width();
+		var movil_0 = 768;
+		var movil_1 = 767;
+
+		if ((widthW >= movil_0) && (jQuery(".detallesRestricciones").is(":hidden"))) 
+		{
+			jQuery(".detallesRestricciones").slideToggle("slow");
+			//ocultar cuando este activos en pc por boton
+			jQuery(".detallesModalidades").hide();
+			jQuery(".detallesComentarios").hide();
+			//cambiar icono en responsive cuando este activos
+			jQuery(".detallesRestriccionesIcon").removeClass("fa-plus-circle").addClass("fa-minus-circle");
+			//cambiar fondos cuando este activos en pc por boton
+			jQuery(".detallesModalidades_cabec").removeClass("fnd_fff_768").addClass("fnd_EBEBEB_768");
+			jQuery(".detallesRestricciones_cabec").removeClass("fnd_fff_768 fnd_EBEBEB_768").addClass("fnd_fff_768");
+			jQuery(".detallesComentarios_cabec").removeClass("fnd_fff_768").addClass("fnd_EBEBEB_768");
+		} else {
+			jQuery(".detallesRestricciones").hide();
+			jQuery(".detallesRestriccionesIcon").removeClass("fa-minus-circle").addClass("fa-plus-circle");
+		}
+
+		if ((widthW <= movil_1) && (jQuery(".detallesRestricciones_rp").is(":hidden"))) 
+		{
+			jQuery(".detallesRestricciones_rp").slideToggle("slow");
+			jQuery(".detallesRestriccionesIcon").removeClass("fa-plus-circle").addClass("fa-minus-circle");
+		} else {
+			jQuery(".detallesRestricciones_rp").hide();
+			jQuery(".detallesRestriccionesIcon").removeClass("fa-minus-circle").addClass("fa-plus-circle");
+		}
+	}
+
+	function detallesComentarios()
+	{
+		var widthW = jQuery(window).width();
+		var movil_0 = 768;
+		var movil_1 = 767;
+
+		if ((widthW >= movil_0) && (jQuery(".detallesComentarios").is(":hidden"))) 
+		{
+			jQuery(".detallesComentarios").slideToggle("slow");
+			//ocultar cuando este activos en pc por boton
+			jQuery(".detallesModalidades").hide();
+			jQuery(".detallesRestricciones").hide();
+			//cambiar icono en responsive cuando este activos
+			jQuery(".detallesComentariosIcon").removeClass("fa-plus-circle").addClass("fa-minus-circle");
+			//cambiar fondos cuando este activos en pc por boton
+			jQuery(".detallesModalidades_cabec").removeClass("fnd_fff_768").addClass("fnd_EBEBEB_768");
+			jQuery(".detallesRestricciones_cabec").removeClass("fnd_fff_768").addClass("fnd_EBEBEB_768");
+			jQuery(".detallesComentarios_cabec").removeClass("fnd_fff_768 fnd_EBEBEB_768").addClass("fnd_fff_768");
+		} else {
+			jQuery(".detallesComentarios").hide();
+			jQuery(".detallesComentariosIcon").removeClass("fa-minus-circle").addClass("fa-plus-circle");
+		}
+
+		if ((widthW <= movil_1) && (jQuery(".detallesComentarios_rp").is(":hidden"))) 
+		{
+			jQuery(".detallesComentarios_rp").slideToggle("slow");
+			jQuery(".detallesComentariosIcon").removeClass("fa-plus-circle").addClass("fa-minus-circle");
+		} else {
+			jQuery(".detallesComentarios_rp").hide();
+			jQuery(".detallesComentariosIcon").removeClass("fa-minus-circle").addClass("fa-plus-circle");
+		}
+	}
+
+	function modalidadesConsulta_visu()
+	{
+		if (jQuery(".modalidadesConsulta").is(":hidden"))
+		{
+			jQuery(".modalidadesConsulta").slideToggle("slow");
+		}
+	}
+
+
+	function detallesModalidades()
+	{
+		var widthW = jQuery(window).width();
+		var movil_0 = 768;
+		var movil_1 = 767;
+
+		if ((widthW >= movil_0) && (jQuery(".detallesModalidades").is(":hidden"))) 
+		{
+			jQuery(".detallesModalidades").slideToggle("slow");
+			//ocultar cuando este activos en pc por boton
+			jQuery(".detallesRestricciones").hide();
+			jQuery(".detallesComentarios").hide();
+			//cambiar icono en responsive cuando este activos
+			jQuery(".detallesModalidadesIcon").removeClass("fa-plus-circle").addClass("fa-minus-circle");
+			//cambiar fondos cuando este activos en pc por boton
+			jQuery(".detallesModalidades_cabec").removeClass("fnd_fff_768 fnd_EBEBEB_768").addClass("fnd_fff_768");
+			jQuery(".detallesRestricciones_cabec").removeClass("fnd_fff_768").addClass("fnd_EBEBEB_768");
+			jQuery(".detallesComentarios_cabec").removeClass("fnd_fff_768").addClass("fnd_EBEBEB_768");
+		} else {
+			jQuery(".detallesModalidades").hide();
+			jQuery(".detallesModalidadesIcon").removeClass("fa-minus-circle").addClass("fa-plus-circle");
+		}
+
+		if ((widthW <= movil_1) && (jQuery(".detallesModalidades_rp").is(":hidden"))) 
+		{
+			jQuery(".detallesModalidades_rp").slideToggle("slow");
+			jQuery(".detallesModalidadesIcon").removeClass("fa-plus-circle").addClass("fa-minus-circle");
+		} else {
+			jQuery(".detallesModalidades_rp").hide();
+			jQuery(".detallesModalidadesIcon").removeClass("fa-minus-circle").addClass("fa-plus-circle");
+		}
+	}
+
+	function detalleTourVerMas()
+	{
+		if (jQuery(".detalleTourVerMas").is(":hidden"))
+		{
+		
+		jQuery(".detalleTourcorto").hide();
+			jQuery(".detalleTourVerMas").slideToggle("slow");
+			jQuery(".detalleTourVerMasTitulo").text(app.lang.VER_MENOS);
+			jQuery(".detalleTourVerMasIcon").removeClass("fa-chevron-down").addClass("fa-chevron-up");
+		} else {
+		jQuery(".detalleTourcorto").show();
+			jQuery(".detalleTourVerMas").slideToggle("slow");
+			jQuery(".detalleTourVerMasTitulo").text(app.lang.ver_mas_dt);
+			jQuery(".detalleTourVerMasIcon").removeClass("fa-chevron-up").addClass("fa-chevron-down");
+		}
+	}
+	/*function vermas(){
+		if (jQuery("#desc").is(":hidden"))
+		{
+			jQuery("#boton_ver_mas").text(app.lang.VER_MENOS);
+			jQuery(".boton_ver_mas").text(app.lang.VER_MENOS);
+			jQuery("#desc_corta").hide();
+			jQuery("#desc").show();
+		}else{
+			jQuery("#boton_ver_mas").text(app.lang.ver_mas_dt);
+			jQuery(".boton_ver_mas").text(app.lang.ver_mas_dt);
+			jQuery("#desc_corta").show();
+			jQuery("#desc").hide();
+		}
+	}*/
+
+
+	function imagenescl() {
+		var imagenescl = jQuery('.imagenescl').hasClass('i-5-prz');
+		switch(imagenescl) {
+			case false:
+				jQuery('.imagenescl').addClass('i-5-prz');
+				jQuery('.imagenescl').removeClass('i-6-prz');
+				jQuery('.videocl').addClass('i-6-prz');
+				jQuery('.videocl').removeClass('i-5-prz');
+				// carousel video
+				var Carousel2 = jQuery('#Carousel2').hasClass('dsp-n');
+				switch(Carousel2) {					
+					case false:
+						// videos
+						jQuery('#Carousel2').addClass('dsp-n');
+						// imagenes
+						var Carousel1 = jQuery('#Carousel1').hasClass('dsp-n');
+						jQuery('#Carousel1').removeClass('dsp-n');
+						switch(Carousel1) {
+							case true:
+								jQuery('#Carousel1').removeClass('dsp-n');
+								break;
+						}
+						break;
+				}
+				break;
+		}
+	}
+	function videocl() {
+		var videocl = jQuery('.videocl').hasClass('i-6-prz');
+		switch(videocl) {
+			case true:
+				jQuery('.imagenescl').addClass('i-6-prz');
+				jQuery('.imagenescl').removeClass('i-5-prz');
+				jQuery('.videocl').addClass('i-5-prz');
+				jQuery('.videocl').removeClass('i-6-prz');
+				// carousel img
+				var Carousel1 = jQuery('#Carousel1').hasClass('dsp-n');
+				switch(Carousel1) {					
+					case false:
+						// imagenes
+						jQuery('#Carousel1').addClass('dsp-n');
+						// videos
+						var Carousel2 = jQuery('#Carousel2').hasClass('dsp-n');
+						jQuery('#Carousel2').removeClass('dsp-n');
+						switch(Carousel2) {
+							case true:
+								jQuery('#Carousel2').removeClass('dsp-n');
+								break;
+						}
+						break;
+				}
+				break;
+		}
+	}
+	//#################### FUNCIONES API XCARET
+	function hotelAPI() {
+		var excursion = $("#idExc").val();
+		var hotel = $("#buscar_tour_hotel").val();
+		$.ajax({
+            beforeSend: function(){                    
+            },
+            type: 'POST',
+            url: 'ajax/ajaxkevin.php',
+            data: 'opcion=dataHotelAPI&excursion='+excursion+'&hotel='+hotel,
+            dataType: 'xml',
+            success: function(xml){
+            	var mapeo = parseInt($("mapeoHotel",xml).text());
+            	if (mapeo === 0) {
+            		$("#buscar_tour_hotel").find(':selected').attr('mapeoHotel','0');
+            		$("#buscar_tour_hotel").find(':selected').attr('geografia',$("geografiApiXcaret",xml).text());
+            	}else{
+            		$("#buscar_tour_hotel").find(':selected').attr('mapeoHotel','1');
+       				$("#buscar_tour_hotel").find(':selected').attr('idHotelProv',$("idHotelProv",xml).text());
+       				$("#buscar_tour_hotel").find(':selected').attr('nomHotelProv',$("nombreHotelProv",xml).text());
+       				$("#buscar_tour_hotel").find(':selected').attr('geografia',$("geografiApiXcaret",xml).text());
+       				$("#buscar_tour_hotel").find(':selected').attr('statuspunto',$("statusPunto",xml).text());
+            	}
+            }
+        }).fail(function( jqXHR, textStatus, errorThrown) {
+            alert( jqXHR );
+            alert( textStatus );
+            alert( errorThrown );
+        });
+	}
+
+	function availListXcaret(valores_renglon) {
+		var fecha        = $("#fecha_exc").val();
+		var id_prod_api  = $("#modalidad_tour").find(':selected').attr('id_product_api');
+		var geografia    = $("#buscar_tour_hotel").find(':selected').attr('geografia');
+		var id_renglones = $("#modal_renglon").val();
+		var modalidad    = $("#modalidad_tour").val();
+		var mapeHotel = parseInt($("#buscar_tour_hotel").find(':selected').attr('mapeoHotel'));
+		if (mapeHotel > 0) {
+			var idHotelProveedor = $("#buscar_tour_hotel").find(':selected').attr('idHotelProv');
+		}else{
+			var idHotelProveedor = 0;
+		}
+		// Dividimos la fecha en día, mes y año
+		var dateParts = fecha.split("-"); // ["23", "01", "2025"]
+		// Reorganizamos los componentes en el nuevo formato
+		var formattedDate = dateParts[2] + "-" + dateParts[1] + "-" + dateParts[0];
+		var idHotel = $("#buscar_tour_hotel").val();
+		var proveedor = $("#idproveedor").val();
+		// Convertir las cadenas en arrays
+		var idArray = id_renglones.split(",").map(Number);
+		var valoresArray = valores_renglon.split(",").map(Number);
+
+		// Crear el objeto Paxes dinámicamente
+		var paxes = {};
+		idArray.forEach(function(id, index) {
+		    if (id === 1) paxes.Adults = valoresArray[index] || 0; // Adultos
+		    if (id === 2) paxes.Children = valoresArray[index] || 0; // Niños
+		    if (id === 3) paxes.Infants = valoresArray[index] || 0; // Infantes
+		});
+
+		var bodyAvail = {
+			"Body": {
+				"SearchCriteria": {
+					"DiscountPercent": 0,
+					"Dates": {
+						"From": formattedDate,
+						"To": formattedDate
+					},
+					"Paxes": paxes,
+					"Products": [id_prod_api],
+					"Geographies": [geografia],
+					"Parks": [],
+					"Location": []
+
+				}
+			}
+		};
+
+		$.ajax({
+			beforeSend: function(){   
+				$("#turno_tour").empty();
+				$("#dataApiHoteles").empty();
+				$("#datosApi").empty();
+				HoldOn.open('sk-circle');
+			},
+			type: 'POST',
+			url: 'ajax/ajaxkevin.php',
+			data: 'opcion=dataAvailXcaret&bodyAvail='+JSON.stringify(bodyAvail)+'&idHotelProveedor='+idHotelProveedor+'&proveedor='+proveedor+'&hotelInterno='+idHotel+'&modalidad='+modalidad,
+			dataType: 'xml',
+			success: function(xml){
+            	// var cadenaPrecios = '';
+				HoldOn.close();
+            	 //OJO POR EL MOMENTO ESTA ASIGNADO TOTAL YA QUE NO HAGO VERIFICACION DE CUPON APLICADO
+				  //####################
+				  // Extraer datos del XML
+					
+				  	//####################
+					var total = redondeo($("publicRate",xml).text(),2); 
+					var precio = total;
+					var precio_descuento = total;
+					$("#precio,#precioCompraRapida").text(precio + " USD");		  
+					$("#precio_descuento,#precio_descuentoCompraRapida").text(precio+ " USD");
+					// 	jQuery("#precio_descuento").css('display','');
+					// 	jQuery("#precio,#precioCompraRapida").removeClass('text-danger');
+					// 	jQuery("#precio,#precioCompraRapida").removeClass('text-center');
+					// 	jQuery("#precio,#precioCompraRapida").removeClass('ln-h-20');
+					// 	jQuery("#precio,#precioCompraRapida").addClass('ltr-cccccc ltr-20 tch-txt ltr-f-w-b');			
+					// }else if(parseInt(no_aplica_cupon) == 1 && parseInt(jQuery("precio_descuento_modalidadHTML",xml).text())==0 && parseInt(jQuery("existe_cupon",xml).text())==1){	
+					// 	console.log("entro 2");	
+					// 	jQuery("#precio_descuento,#precio_descuentoCompraRapida").text(jQuery("precio_total_modalidadHTML",xml).text() + " USD");
+					// 	if(no_aplica_cupon_zona)
+					// 		jQuery("#precio,#precioCompraRapida").text(app.lang.etiqueta_dt_no_aplica_cupon_zona);
+					// 	else
+					// 		jQuery("#precio,#precioCompraRapida").text(app.lang.etiqueta_dt_no_aplica_cupon);
+					// 	jQuery("#precio_descuento,#precio_descuentoCompraRapida").parent().css('display','block');
+					// 	jQuery("#precio,#precioCompraRapida").addClass('text-danger');
+					// 	jQuery("#precio,#precioCompraRapida").addClass('ltr-14 ln-h-20 text-center');
+					// 	jQuery("#precio,#precioCompraRapida").removeClass('ltr-25 tch-txt ltr-f-w-b');
+					// }else if(parseInt(jQuery("precio_descuento_modalidadHTML",xml).text())==0){
+					// 	console.log("entro 3");	
+					// 	jQuery("#precio_descuento,#precio_descuentoCompraRapida").css('display','none');
+					// 	jQuery("#precio_descuento,#precio_descuentoCompraRapida").text("0 USD");
+					// 	jQuery("#precio,#precioCompraRapida").text(jQuery("precio_total_modalidadHTML",xml).text() + " USD");
+					// 	jQuery("#precio,#precioCompraRapida").removeClass('text-danger');
+					// 	jQuery("#precio,#precioCompraRapida").removeClass('text-center');
+					// 	jQuery("#precio,#precioCompraRapida").removeClass('ln-h-20');
+					// 	//jQuery("#precio").addClass('tch-txt ltr-f-w-b');
+					// }
+					if ($("availStatus",xml).text() === 'Close') {
+						alert("El parque no esta abierto para la fecha indicada");
+						$("#turno_tour").append($("<option>", {value: "", text: "-- SIN DISPONIBILIDAD --", disabled: true,selected: true}));
+					} else {
+						$("#turno_tour").append($("<option>", {value: "0", text: "-- Seleccione El turno --",  selected: true}));
+						$("turnosXcaret", xml).each(function(id) {
+							var num = $("turnosXcaret", xml).get(id);
+							var identificador = $("identificador", num).text();
+							var turno = $(this);
+				            // Iterar sobre los puntos de recogida dentro de cada turno
+							$("puntos", turno).each(function() {
+								var punto = $(this);
+								var displayText = $("puntoRecogida", punto).text()+" | "+$("hora", punto).text();
+								var hora = $("hora", punto).text();
+								var puntoId = $("id_punto", punto).text();
+				                // Agregar la opción al select con el nombre del punto y su id
+								$("#turno_tour").append($("<option>", {
+									value: '',
+									text: displayText,
+									identifier: identificador,
+									hora: hora,
+									puntoRec: puntoId
+								}));
+							});
+						});
+					}
+					$("#precio_reserva").val(precio);  
+					$("#precio_reserva_descuento").val(precio_descuento);
+					$("#turno_tour").attr("onchange", "asignaRecogida('" + valores_renglon + "')");
+				}
+			}).fail(function( jqXHR, textStatus, errorThrown) {
+				alert( jqXHR );
+				alert( textStatus );
+				alert( errorThrown );
+			});
+		}
+
+	function redondeo(numero, decimales){
+	  var flotante = parseFloat(numero);
+	  var resultado = Math.round(flotante*Math.pow(10,decimales))/Math.pow(10,decimales);
+	  return resultado;
+	}
+
+	function procesoHorario(modalidad,horaApi,hotel,idPunto,horaPickup) {
+		console.log("Modalidad: "+modalidad+" | Hora API: "+horaApi+" | Hotel: "+hotel+" | Punto Encuentro: "+idPunto+" | Hora Pickup: "+horaPickup);
+		if (horaApi != null && horaApi != '' && horaApi != 'Turno Unico') {
+			var horaVerificada = horaApi;
+		} else {
+			var horaVerificada = '00:00:00';
+		}
+		$.ajax({
+			beforeSend: function(){
+				$("#turno_tour").val();  
+				$("#horarioColor").val('');
+				HoldOn.open('sk-circle');
+			},
+			type: "POST",
+			url: "ajax/ajaxkevin.php",
+			data: "opcion=asigRecApiXcaret&modalidad="+modalidad+"&horaApi="+horaVerificada+"&hotel="+hotel+"&idPunto="+idPunto+"&horapickup="+horaPickup,
+			dataType: "xml",
+			success: function (xml) {
+				HoldOn.close();
+				var datosTurnoApi=parseInt($("actualizado",xml).text());
+				var colorStatus = parseInt($("colorInput",xml).text());
+				if (datosTurnoApi === 1) {
+					var turnoApi = horaApi;
+					// alert("Se ha Actualizado Correctamente la hora de comienzo de la Excursión", 5000, 'green');
+					$("#turno_tour").find(":selected").text("Hora de recogida:"+$("hora_recogida",xml).text());
+					$("#hora_turno").val($("hora_turno",xml).text());
+					var horaOriginal = $("hora_turno", xml).text();
+	              // var horaFormateada = horaOriginal.substring(0, 5);
+
+					$("#turno_tour").find(":selected").attr('value', $("id_horario", xml).text());
+
+					var horaMod = $("hora_recogida", xml).text();
+					$("#divHorario").show();
+					$("#horarioColor").val(horaMod);
+					if (colorStatus == 1 && horaMod != '00:00:00') {
+						$("#horarioColor").css('color','#2cd46b');
+					}
+					else if(colorStatus == 2 || horaMod == '00:00:00'){
+						$("#horarioColor").css('color','#e2bd36');
+					}
+					else if(colorStatus == 1 && horaMod == turnoApi){
+						$("#horarioColor").css('color','#e2bd36');
+					}
+					else{
+						$("#horarioColor").css('color','#f6100d');
+					}
+				} else {
+					// alert("Ha ocurrido un error. No se pude Actualizar la hora de comienzo. Intente nuevamente.", 5000, 'red');
+				}
+			}
+		});
+	}
+
+	function addRecogida(modalidad,hotel) {
+	    // var latitud = $("#base_recogida_x").find(":selected").attr('latitud');
+	    // var longitud = $("#base_recogida_x").find(":selected").attr('longitud');
+	    var proveedor = $("#idproveedor").val();
+	    var idHoraPickup = $("#base_recogida_x").find(":selected").attr('idPickup');
+	    var horaPickup = $("#base_recogida_x").find(":selected").attr('horaPickup');
+	    var hotelXcaret = $("#base_recogida_x").find(":selected").val();
+	    var nombreHotelXcaret = $("#base_recogida_x").find(":selected").text();
+	    var horaTurno = $("#turno_tour").find(':selected').attr('hora');
+	    var puntoRec = $("#turno_tour").find(':selected').attr('puntoRec');
+	    
+	    $.ajax({
+	          beforeSend: function(){
+	            $("#datosApiXcaret").attr('idHotelXcaret','');
+	            $("#datosApiXcaret").attr('idHoraPickup','');
+	            $("#datosApiXcaret").attr('horaPickup','');
+	          },
+	          type: "POST",
+	          url: "ajax/ajaxkevin.php",
+	          // data: "opcion=asigLatLong&hotel="+hotel+"&latitud="+latitud+"&longitud="+longitud,
+	          data: "opcion=asigidhotelapi&hotel="+hotel+"&idhotelxcaret="+hotelXcaret+"&proveedor="+proveedor+'&nombrehotel='+nombreHotelXcaret,
+	          dataType: "xml",
+	          success: function (xml) {
+	            var confirma = parseInt($("confirma",xml).text());
+	            if (confirma == 1) {
+	              $("#datosApiXcaret").attr('idHotelXcaret',hotelXcaret);
+	              $("#datosApiXcaret").attr('idHoraPickup',idHoraPickup);
+	              $("#datosApiXcaret").attr('horaPickup',horaPickup);
+	              alert("Se agrego el punto de recogida correctamente, espere...", 5000, 'green');
+	              procesoHorario(modalidad,horaTurno,hotel,puntoRec,horaPickup);
+	            } else {
+	              alert("Ha ocurrido un error. No se pude Actualizar el punto de recogida", 5000, 'red');
+	            }
+	          }
+	    });
+	}
+
+	function reservarHoldXcaret(proveedor,id_item){
+
+		if (proveedor == 163) {
+			rateIdentifier = $("#datosApi").val();
+			$.ajax({
+	            beforeSend: function(){
+	                  // $("#procesar1").attr("disabled","disabled");
+	                  // $("#procesar2").attr("disabled","disabled");
+	                  // $("#procesar3").attr("disabled","disabled");
+	                },
+	                type: 'POST',
+	                url: 'ajax/ajaxkevin.php',
+	                data: 'opcion=holdReservXcaret&proveedor='+proveedor+'&identificador='+rateIdentifier+'&id_item='+id_item,
+	                dataType: 'xml',
+	            success: function (xml) {
+	              var resultado = parseInt($("conexionSuccess",xml).text());
+	              if (resultado == 1) {
+	                // alert("Se envio la reserva correctamente al PROVEEDOR, favor de esperar... "+$("reservation_id",xml).text()+" | Fecha Registro : "+$("fechaRegistro",xml).text()+" | Expira: "+$("expira",xml).text()+" | Status: "+$("status",xml).text());
+	                $("#datosApi").attr('holdreservid',$("idReserva",xml).text());
+	                // $("#statusReservApi").val('1');
+	                // save(op);
+	              } else {
+	                // alert("NO se pudo reservar directamente desde el sistema del proveedor, se resguardara la reserva en PAXOS, COMUNIQUESE CON EL DPTO DE EXCURSIONES");
+	                // save(op);
+	              }
+	              
+	            }
+	        }).fail( function( jqXHR, textStatus, errorThrown ) {
+	                alert( jqXHR );
+	                alert( textStatus );
+	                alert( errorThrown );
+	        });
+		} else {
+
+		}
+
+	}
+
+	//#################### FUNCIONES API XCARET
+
+	//#################### FUNCIONES API CANCUN ADVENTURE
+	function availListAdv(){
+		var id_prod_api  = $("#modalidad_tour").find(':selected').attr('id_product_api');
+		var fecha        = $("#fecha_exc").val();
+		var proveedor 	 = $("#idproveedor").val();
+		var hotel        = $("#buscar_tour_hotel").val();
+		var statusPunto  = $("#buscar_tour_hotel").find(':selected').attr('statuspunto');
+		var nomProvHotel = $("#buscar_tour_hotel").find(':selected').attr('nomhotelprov');
+
+		$.ajax({
+            beforeSend: function(){   
+            	$("#turno_tour").empty();
+            	// $("#dataApiHoteles").empty();
+            	// $("#datosApi").empty();
+            	HoldOn.open('sk-circle');
+            },
+            type: 'POST',
+            url: 'ajax/ajaxkevin.php',
+            data: 'opcion=dataAvailAdv&proveedor='+proveedor+'&fecha='+fecha+'&idproductapi='+id_prod_api+'&hotel='+hotel+'&statusPunto='+statusPunto+'&nomProvHotel='+nomProvHotel,
+            dataType: 'xml',
+            success: function(xml){
+            	HoldOn.close();
+            	var datosApi=parseInt($("conexionSuccess",xml).text());
+            	if (datosApi === 0) {
+            		$("#precioApiAdulto").val('');
+            		$("#precioApiNino").val('');
+            		console.log("No hay datos que agregar");
+            		if (statusApi != 1) {
+            			$("#turno_tour").removeAttr('disabled'); 
+            			$("#loadingReserva2").hide();
+            			$("#turno_tour").empty(); 
+	                // validaTurnos($("#base_x").val());
+            			$("#turno_tour").append($("<option>", {value: "", text: "-- SIN DISPONIBILIDAD --", disabled: true, selected: true}));
+            			alert("No Hay Disponibilidad Con El Proveedor");
+            		}
+            		else{
+            			$("#turno_tour").append($("<option>", {value: "", text: "-- SIN DISPONIBILIDAD --", disabled: true, selected: true}));
+            			alert("No Hay Disponibilidad Con El Proveedor");
+            		}
+            	}
+            	else if(datosApi == 2){
+            		Materialize.toast("No se puede utilizar una fecha pasada para reservar directamente con el proveedor o supera el maximo de 6 meses en el futuro", 8000, 'red');
+            		console.log("Error: "+$("erroGen",xml).text()+" | Mensaje: "+$("mensajeError",xml).text());
+            		alert("No se completara la confirmación con el proveedor");
+            		$("#precioApiAdulto").val('');
+            		$("#precioApiNino").val('');
+            		if (statusApi != 1) {
+            			$("#turno_tour").removeAttr('disabled'); 
+            			$("#loadingReserva2").hide();
+            			$("#turno_tour").empty(); 
+            			validaTurnos($("#base_x").val());
+            		}
+            		else{
+            			alert("Ocurrio algun error, con las fechas (NO PUEDE PASAR DE 6 MESES NI FECHAS PASADAS)");
+            		}
+            	}
+            	else if(datosApi == 3){
+            		// Materialize.toast("Ocurrio un error, no se puede cargar la información del proveedor", 7000, 'red');
+            		// alert("No se completara la confirmación con el proveedor debido a : "+$("erroGen",xml).text()+"Este es el mensaje desplegado: "+$("mensajeError",xml).text());
+            		$("#precioApiAdulto").val('');
+            		$("#precioApiNino").val('');
+            		if (statusApi != 1) {
+            			$("#turno_tour").removeAttr('disabled'); 
+            			$("#loadingReserva2").hide();
+            			$("#turno_tour").empty(); 
+            			validaTurnos($("#base_x").val());
+            		}
+            		else{
+            			alert("Este Hotel NO tiene turnos Asignados");
+            		}
+            	}
+            	else{ 
+            		if ($("puntos", xml).val() !== '' ) {
+            			$("#turno_tour").append($("<option>", {value: "0", text: "-- SIN DISPONIBILIDAD --", disabled: true, selected: true}));
+            			alert("No Hay Disponibilidad Con El Proveedor");
+            		} else {
+            			var valores_renglon = '1,0,0';
+            			$("#turno_tour").append($("<option>", {value: "0", text: "-- Seleccione El turno --",  selected: true}));
+            			$("turno", xml).each(function(id) {
+            				var num = $("turno", xml).get(id);
+            				var horaExcursion = $("horaExcursion", num).text();
+            				var cantMaxima = $("cantMaxima", num).text();
+	                        // Iteramos sobre cada punto de recogida dentro de cada turno
+            				$("puntos", num).each(function() {
+            					var puntoRecogida = $(this).find("puntoRecogida").text();
+            					var idPunto = $(this).find("id_punto").text();
+            					var displayText = puntoRecogida + ": Turno (" + horaExcursion +")";
+            					$("#turno_tour").append($("<option>", {
+            						value: '',
+            						text: displayText,
+            						dataHora: horaExcursion,
+            						cantTickt: cantMaxima,
+            						idPunto: idPunto
+            					}));
+            				});
+            			});
+            			$("#turno_tour").attr('onchange','asignaRecogida()');
+            			console.log("efectivamente entramos en los datos de la excursion API:"+$("horaExcursion",xml).text());
+            			cargarPrecio();
+            		}
+            	}
+            }
+        }).fail(function( jqXHR, textStatus, errorThrown) {
+            alert( jqXHR );
+            alert( textStatus );
+            alert( errorThrown );
+        });
+	}
+
+	 function asignaRecogida(valores_renglon){
+	 	//FALTA AJUSTES DE VARIABLES PARA SU CORRECTO FUNCIONAMIENTO!
+	 	var modalidad 	 = $("#modalidad_tour").val();
+	 	var proveedor 	 = parseInt($("#idproveedor").val());
+	 	var hotel  		 = $("#buscar_tour_hotel").val();
+	 	
+	 	if (proveedor === 185 || proveedor === 202) {
+	 		var puntoStatus =  parseInt($("#buscar_tour_hotel").attr('statuspunto'));
+	 		if (puntoStatus === 1) {
+	 			var nomPuntoApi = '';
+	 		} else {
+	 			var nomPuntoApi = $("#buscar_tour_hotel").attr('nomhotelprov');
+	 		}
+        	// var puntoidexistente = $("#idHotelApi").attr('puntoidexistente');
+	 		var horaApi = $("#turno_tour").find(':selected').attr('datahora');
+	 		var tickets = $("#turno_tour").find(':selected').attr('canttickt');
+	 		var idPunto = $("#turno_tour").find(':selected').attr('idpunto');
+	 		console.log("estoy en la otra condicion de asignación!!--- Hora API: "+horaApi);
+	 		$.ajax({
+	 			beforeSend: function(){ 
+	 				// $("#horarioColor").val('');
+	 				// $("#turno_tour").text('');
+	 			},
+	 			type: "POST",
+	 			url: "ajax/ajaxkevin.php",
+	 			data: "opcion=asigRecApi&modalidad="+modalidad+"&horaApi="+horaApi+"&hotel="+hotel+"&nombrePunto="+nomPuntoApi+"&idPunto="+idPunto,
+	 			dataType: "xml",
+	 			success: function (xml) {
+	 				var datosTurnoApi=parseInt($("actualizado",xml).text());
+	 				var colorStatus = parseInt($("colorInput",xml).text());
+	 				if (datosTurnoApi === 1) {
+	 					var turnoApi = horaApi+':00';
+	 					// Materialize.toast("Se ha Actualizado Correctamente la hora de comienzo de la Excursión", 5000, 'green');
+	 					$("#hora_recogida").val("Hora Excursión:"+$("hora_turno",xml).text());
+	 					// $("#hora_turno").val($("hora_turno",xml).text());
+	 					var horaOriginal = $("hora_recogida", xml).text();
+	 					var horaFormateada = horaOriginal.substring(0, 5);
+	 					if (horaApi == horaFormateada) {
+	 						var Hola = $("#turno_tour").find(":selected").attr('value', $("id_horario", xml).text());
+	 						var Adios = $("#turno_tour").find(":selected").text('Hora de Recogida: CONFIRMAR');
+	 					}
+	 					else{
+	 						var Hola = $("#turno_tour").find(":selected").attr('value', $("id_horario", xml).text());
+	 						var Adios = $("#turno_tour").find(":selected").text('Hora de Recogida: '+$("hora_recogida", xml).text());
+	 					}
+	 					// var horaMod = $("hora_recogida", xml).text();
+	 					// $("#cantTikets").val(tickets);
+	 					// $("#divHorario").show();
+	 					// $("#horarioColor").val(horaMod);
+	 					// if (colorStatus == 1 && horaMod != '00:00:00') {
+	 					// 	$("#horarioColor").css('color','#2cd46b');
+	 					// }
+	 					// else if(colorStatus == 2 || horaMod == '00:00:00'){
+	 					// 	$("#horarioColor").css('color','#e2bd36');
+	 					// }
+	 					// else if(colorStatus == 1 && horaMod == turnoApi){
+	 					// 	$("#horarioColor").css('color','#e2bd36');
+	 					// }
+	 					// else{
+	 					// 	$("#horarioColor").css('color','#f6100d');
+	 					// }
+	 				} else {
+	 					// alert("ENTRO EN ESTA CONDICION");
+	 					// Materialize.toast("Ha ocurrido un error. No se pude Actualizar la hora de comienzo. Intente nuevamente.", 5000, 'red');
+	 				}
+	 			}
+	 		});
+
+	 	}
+	 	else if(proveedor === 163){
+	 		var mapeHotel = parseInt($("#buscar_tour_hotel").find(':selected').attr('mapeoHotel'));
+			if (mapeHotel > 0) {
+				var idHotelProveedor = $("#buscar_tour_hotel").find(':selected').attr('idHotelProv');
+			}else{
+				var idHotelProveedor = 0;
+			}
+			var rateIdentifier = $("#turno_tour").find(':selected').attr('identifier');
+			var hora = $("#turno_tour").find(':selected').attr('hora');
+	 		var puntoRecogida = $("#turno_tour").find(':selected').attr('puntorec')
+			var id_renglones = $("#modal_renglon").val();
+			// Convertir las cadenas en arrays
+			// alert(valores_renglon);
+			var idArray = id_renglones.split(",").map(Number);
+			var valoresArray = valores_renglon.split(",").map(Number);
+	 		$.ajax({
+	 			beforeSend: function(){ 
+	 				// $("#turno_tour").empty();
+	 				// $("#totales_renglon").empty();
+	 				// $("#precioCompraRapida").empty();
+	 				// $("#precio").empty();
+					HoldOn.open('sk-circle'); 
+	 				$("#datosApi").val('');
+	 			},
+	 			type: "POST",
+	 			url: "ajax/ajaxkevin.php",
+	 			data: "opcion=buscarRate&proveedor="+proveedor+"&hotelProveedor="+idHotelProveedor+'&rateIdentifier='+rateIdentifier+'&horaTurnoAPI='+hora+'&modalidad='+modalidad,
+	 			dataType: "xml",
+	 			success: function (xml) {
+					var total = redondeo($("publicRate",xml).text(),2); 
+					$("#precio_reserva").val(total);
+					var precio = total;
+					var precio_descuento = total;
+	 				var rates = []; // Aquí almacenaremos los objetos con type y publicRate
+					$("preciosXcaret", xml).each(function(index, element) {
+						const type = $("renglon", element).text();
+					    const publicRate = parseFloat($("precio", element).text()); // Convertimos a número
+					    rates.push({ type, publicRate });
+					});
+
+					// Construcción de cadenaValores
+					let cadenaValores = rates.map(rate => `${rate.type}:${rate.publicRate}`).join(',');
+					console.log("cadenaValores:", cadenaValores);
+
+					// Construcción de total_renglon
+					let total_renglon = idArray.map((id, index) => {
+					    const rate = rates[index]?.publicRate || 0; // Evitamos errores si falta algún dato
+					    const cantidad = valoresArray[index];
+					    const total = rate * cantidad;
+
+					    // Si el total es 0, lo dejamos como número entero, de lo contrario, usamos dos decimales
+					    return `${id}:${total === 0 ? 0 : total.toFixed(2)}`;
+					}).join(';');
+
+					console.log("total_renglon:", total_renglon);
+
+					$("#totales_renglon").val(total_renglon);
+					$("#precio,#precioCompraRapida").text(precio + " USD");		  
+					$("#precio_descuento,#precio_descuentoCompraRapida").text(precio+ " USD");
+	 				var match = parseInt($("match",xml).text());
+	 				if (hotel != '2470') {
+	 					if (match == 1) {
+	 						var rateIdentifier = $("rateIdentifier",xml).text();
+	 						// alert("ESTE ES EL IDENTIFICADOR: "+rateIdentifier);
+	 						$("#datosApi").val(rateIdentifier);
+	 						// alert("SI HAY UN MATCH");
+	 						$("#dataApiHoteles").addClass('ocultar');
+
+	 						// $("#turno_tour").append($("<option>",{ value: $("pickupId",xml).text(), text: $("pickupTime",xml).text()}));
+	 						$("#divHorario").show();
+	 						$("#horarioColor").val($("pickUpTime",xml).text());
+	 						$("#datosApiXcaret").attr('idHotelXcaret',$("idHotel",xml).text());
+	 						$("#datosApiXcaret").attr('idHoraPickup',$("pickupId",xml).text());
+	 						$("#datosApiXcaret").attr('horaPickup',$("pickupTime",xml).text());
+	 						// alert("HORA DE PICKUP: "+$("pickupTime",xml).text());
+	 						procesoHorario(modalidad,hora,hotel,puntoRecogida,$("pickupTime",xml).text());
+	 					} 
+	 					else if (match == 3){
+	 						alert("No hay disponibilidad para el turno elegido");
+	 					}
+	 					else {
+							HoldOn.close();
+	 						var rateIdentifier = $("rateIdentifier",xml).text();
+	 						// alert("ESTE ES EL IDENTIFICADOR: "+rateIdentifier);
+	 						$("#datosApi").val(rateIdentifier);
+	 						// alert("NO HAY MATCH DE HOTEL!");
+	 						$("#dataApiHoteles").removeClass('ocultar');
+	 						var htmlContent = `
+		                		<div id="idHotelProv" class="col-12 bck-c-fff-992 brd-2-s-cccccc p-b-12 brd-r-4 p-r-0 p-l-0 h-54 select2">
+		 							<select class="h-50-ip w-100-prc pl-2 ltr-999999 border-0 bck-c-fff select2" name="base_recogida_x" id="base_recogida_x" onchange="addRecogida(`+modalidad+`,`+hotel+`)">
+			 							<option selected disabled="disabled">-- Seleccione el punto de recogida mas cercano --</option>`;
+				               					// Iterar sobre los elementos infoPickupXcaret en el XML
+			 							var i = 0;
+			 							$("hoteles", xml).each(function(id) {
+			 								var num = $("hoteles", xml).get(id);
+			 								i = i + 1;
+				               					    // Concatenar las opciones de manera que jQuery pueda interpretarlas correctamente
+			 								htmlContent += '<option value="' + $("idHotelProv", num).text() + '" ';
+			 								htmlContent += 'idPickup="' + $("pickupId", num).text() + '" ';
+			 								htmlContent += 'horaPickup="' + $("pickupTime", num).text() + '">';
+			 								htmlContent += $("hotelName", num).text() +'( '+$("pickupTime", num).text()+' )' + '</option>';
+			 							});
+		 							htmlContent += `</select>
+		                		</div>
+	 						`;
+		                	// Usar jQuery para hacer append al contenedor deseado
+	 						$("#dataApiHoteles").append(htmlContent);
+	 					}
+	 				}
+					else{
+						var rateIdentifier = $("rateIdentifier",xml).text();
+						HoldOn.close();
+	 					$("#datosApi").val(rateIdentifier);
+					}
+	 			}
+	 		});
+	 	}
+	 }
+	//#################### FUNCIONES API CANCUN ADVENTURE
+
